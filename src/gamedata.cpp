@@ -87,8 +87,9 @@ void GameData::load_textures() {
     this->texture_map[0] = new Texture(""); // 0 = white tex
     this->texture_map[1] = new Texture("res/textures/grid_0-1.png");
     this->texture_map[2] = new Texture("res/textures/Octocat.png");
+    this->texture_map[3] = new Texture("res/textures/32x32-bat-sprite.png");
 
-    for (uint32_t i = 0; i < 3; ++i) {
+    for (uint32_t i = 0; i < 4; ++i) {
         this->texture_map[i]->Bind(i);
     }
 }
@@ -194,6 +195,52 @@ void GameData::init() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
+void GameData::append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, glm::vec4 color, float tex_idx) {
+    this->quad_buffer_ptr->position = pos;
+    this->quad_buffer_ptr->color = color;
+    this->quad_buffer_ptr->tex_coords = tex_coord;
+    this->quad_buffer_ptr->tex_idx = tex_idx;
+    this->quad_buffer_ptr++;
+}
+
+glm::vec4 GameData::calculate_sprite_position(SpriteSheet &sheet, uint32_t row, uint32_t col) {
+    float tex_width = this->texture_map[sheet.tex_id]->GetWidth();
+    float tex_height = this->texture_map[sheet.tex_id]->GetHeight();
+    float w = 1.0f / (tex_width / sheet.cell_width);
+    float h = 1.0f / (tex_height / sheet.cell_height);
+    float x = col * w;
+    
+    float y = ((sheet.rows - 1) - row) * h;
+
+    return glm::vec4(x, y, x + w, y + h);
+}
+
+// sprite sheet texture frame
+void GameData::draw_quad(glm::vec2 pos, SpriteSheet& sheet, uint32_t row, uint32_t col) {
+    if (this->index_count >= MAX_IDX_COUNT) {
+        this->end_batch();
+        this->flush();
+        this->begin_batch();
+    }
+
+    glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glm::vec4 uv = calculate_sprite_position(sheet, row, col);
+    glm::vec2 size = { sheet.cell_width, sheet.cell_height };
+    glm::vec2 top_left = { uv.x, uv.y  };
+    glm::vec2 top_right = { uv.z, uv.y };
+    glm::vec2 bottom_right = { uv.z, uv.w };
+    glm::vec2 bottom_left = { uv.x, uv.w };
+    
+    append_vertex(pos, size, top_left, color, sheet.tex_id);
+    append_vertex(glm::vec2(pos.x + size.x, pos.y), size, top_right, color, sheet.tex_id);
+    append_vertex(glm::vec2(pos.x + size.x, pos.y + size.y), size, bottom_right, color, sheet.tex_id);
+    append_vertex(glm::vec2(pos.x, pos.y + size.y), size, bottom_left, color, sheet.tex_id);
+    
+    this->index_count += 6;
+
+}
+
+// texture fill 
 void GameData::draw_quad(glm::vec2 pos, glm::vec2 size, float tex_idx) {
 
     if (this->index_count >= MAX_IDX_COUNT) {
@@ -201,34 +248,17 @@ void GameData::draw_quad(glm::vec2 pos, glm::vec2 size, float tex_idx) {
         this->flush();
         this->begin_batch();
     }
-    
-    this->quad_buffer_ptr->position = pos;
-    this->quad_buffer_ptr->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    this->quad_buffer_ptr->tex_coords = { 0.0f, 0.0f };
-    this->quad_buffer_ptr->tex_idx = tex_idx;
-    this->quad_buffer_ptr++;
 
-    this->quad_buffer_ptr->position = { pos.x + size.x, pos.y };
-    this->quad_buffer_ptr->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    this->quad_buffer_ptr->tex_coords = { 1.0f, 0.0f };
-    this->quad_buffer_ptr->tex_idx = tex_idx;
-    this->quad_buffer_ptr++;
-
-    this->quad_buffer_ptr->position = { pos.x + size.x, pos.y + size.y };
-    this->quad_buffer_ptr->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    this->quad_buffer_ptr->tex_coords = { 1.0f, 1.0f };
-    this->quad_buffer_ptr->tex_idx = tex_idx;
-    this->quad_buffer_ptr++;
-
-    this->quad_buffer_ptr->position = { pos.x, pos.y + size.y };
-    this->quad_buffer_ptr->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-    this->quad_buffer_ptr->tex_coords = { 0.0f, 1.0f };
-    this->quad_buffer_ptr->tex_idx = tex_idx;
-    this->quad_buffer_ptr++;
+    glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+    append_vertex(pos, size, glm::vec2(0.0f, 0.0f), color, tex_idx);
+    append_vertex(glm::vec2(pos.x + size.x, pos.y), size, glm::vec2(1.0f, 0.0f), color, tex_idx);
+    append_vertex(glm::vec2(pos.x + size.x, pos.y + size.y), size, glm::vec2(1.0f, 1.0f), color, tex_idx);
+    append_vertex(glm::vec2(pos.x, pos.y + size.y), size, glm::vec2(0.0f, 1.0f), color, tex_idx);
 
     this->index_count += 6; // each quad draw has 6 indexes;
 }
 
+// color fill
 void GameData::draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 color) {
     
     if (this->index_count >= MAX_IDX_COUNT) {
@@ -236,30 +266,11 @@ void GameData::draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 color) {
         this->flush();
         this->begin_batch();
     }
-   
-    this->quad_buffer_ptr->position = pos;
-    this->quad_buffer_ptr->color = color;
-    this->quad_buffer_ptr->tex_coords = { 0.0f, 0.0f };
-    this->quad_buffer_ptr->tex_idx = 0.0f;
-    this->quad_buffer_ptr++;
 
-    this->quad_buffer_ptr->position = { pos.x + size.x, pos.y };
-    this->quad_buffer_ptr->color = color;
-    this->quad_buffer_ptr->tex_coords = { 1.0f, 0.0f };
-    this->quad_buffer_ptr->tex_idx = 0.0f;
-    this->quad_buffer_ptr++;
-
-    this->quad_buffer_ptr->position = { pos.x + size.x, pos.y + size.y };
-    this->quad_buffer_ptr->color = color;
-    this->quad_buffer_ptr->tex_coords = { 1.0f, 1.0f };
-    this->quad_buffer_ptr->tex_idx = 0.0f;
-    this->quad_buffer_ptr++;
-
-    this->quad_buffer_ptr->position = { pos.x, pos.y + size.y };
-    this->quad_buffer_ptr->color = color;
-    this->quad_buffer_ptr->tex_coords = { 0.0f, 1.0f };
-    this->quad_buffer_ptr->tex_idx = 0.0f;
-    this->quad_buffer_ptr++;
+    append_vertex(pos, size, glm::vec2(0.0f, 0.0f), color, 0.0f);
+    append_vertex(glm::vec2(pos.x + size.x, pos.y), size, glm::vec2(1.0f, 0.0f), color, 0.0f);
+    append_vertex(glm::vec2(pos.x + size.x, pos.y + size.y), size, glm::vec2(1.0f, 1.0f), color, 0.0f);
+    append_vertex(glm::vec2(pos.x, pos.y + size.y), size, glm::vec2(0.0f, 1.0f), color, 0.0f);
 
     this->index_count += 6; // each quad draw has 6 indexes;
 }

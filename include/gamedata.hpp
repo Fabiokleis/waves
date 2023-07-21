@@ -14,6 +14,7 @@
 #include "shader.hpp"
 #include "texture.hpp"
 #include "vertex.hpp"
+#include "spritesheet.hpp"
 
 class GameData
 {
@@ -46,12 +47,15 @@ public:
     
     void draw_quad(glm::vec2 pos, glm::vec2 size, float tex_idx);
     void draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 color);
+    void draw_quad(glm::vec2 pos, SpriteSheet& sheet, uint32_t row, uint32_t col);
     
 private:
     void init();
     void load_textures();
     void load_shaders();
     void setup_glfw_callbacks();
+    void append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, glm::vec4 color, float tex_idx);
+    glm::vec4 calculate_sprite_position(SpriteSheet &sheet, uint32_t row, uint32_t col);
 };
 
 

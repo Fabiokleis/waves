@@ -9,6 +9,7 @@ private:
     std::string m_FilePath;
     unsigned char* m_LocationBuffer;
     int m_Width, m_Height, m_BPP;
+    
 public:
     Texture(const std::string& path);
     ~Texture();
