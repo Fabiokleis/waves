@@ -12,11 +12,12 @@ struct ShaderProgramSource {
 class Shader
 {
 private:
-    std::string m_FilePath;
+    std::string vertex_shader;
+    std::string frag_shader;
     unsigned int m_RendererID;
     std::unordered_map<std::string, int> m_UniformLocationCache;
 public:
-    Shader(const std::string& filepath);
+    Shader(const std::string& vertex_shader, const std::string& frag_shader);
     ~Shader();
 
     void Bind() const;

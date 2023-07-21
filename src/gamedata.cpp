@@ -97,7 +97,8 @@ void GameData::load_textures() {
 void GameData::load_shaders() {
     std::cout << "Loading shaders!\n";
     
-    this->shader_map[0] = new Shader("res/shaders/basic.shader");
+    this->shader_map[0] = new Shader("res/shaders/shader.vert", "res/shaders/shader.frag");
+    
     // 0 = white tex, 1, 2, 3... = tex
     int v[MAX_TEXTURES];
     for (uint32_t i = 0; i < MAX_TEXTURES; ++i) {
