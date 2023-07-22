@@ -3,6 +3,8 @@
 
 #define WIDTH 1200
 #define HEIGHT 720
+#define FPS 60
+#define FRAME_TIME 1.0f/(float)FPS
 
 #define MAX_QUAD_COUNT 1000
 #define MAX_VERTEX_COUNT MAX_QUAD_COUNT * 4 // 4 vertex per quad

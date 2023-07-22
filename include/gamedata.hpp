@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 
-#include "renderer.hpp"
 #include "vertexbuffer.hpp"
 #include "indexbuffer.hpp"
 #include "vertexarray.hpp"
@@ -16,10 +15,10 @@
 #include "vertex.hpp"
 #include "spritesheet.hpp"
 
+// should be instanciated after glfw context
 class GameData
 {
 public:
-    GLFWwindow *window = nullptr;
     glm::mat4 proj;
     glm::mat4 view;
     glm::mat4 model;
@@ -47,15 +46,14 @@ public:
     
     void draw_quad(glm::vec2 pos, glm::vec2 size, float tex_idx);
     void draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 color);
-    void draw_quad(glm::vec2 pos, SpriteSheet& sheet, uint32_t row, uint32_t col);
+    void draw_quad(glm::vec2 pos, const SpriteSheet& sheet, uint32_t row, uint32_t col, bool flip);
     
 private:
     void init();
     void load_textures();
     void load_shaders();
-    void setup_glfw_callbacks();
     void append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, glm::vec4 color, float tex_idx);
-    glm::vec4 calculate_sprite_position(SpriteSheet &sheet, uint32_t row, uint32_t col);
+    glm::vec4 calculate_sprite_position(const SpriteSheet &sheet, uint32_t row, uint32_t col);
 };
 
 

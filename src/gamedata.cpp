@@ -7,35 +7,12 @@
 #include "consts.hpp"
 #include "vertex.hpp"
 
-// glfw callback functions
-
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-}
-
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
-{
-    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
-        double x, y;
-        glfwGetCursorPos(window, &x, &y);
-        glm::vec3 pos = { (float)x, (float)y, 1.0f };
-        //translationA = pos; 
-    }
-}
-
-
 GameData::GameData() {
 
     // initialize glfw and glew
-    this->init();
-    
+    this->init();   
     this->quad_buffer = new Vertex[MAX_VERTEX_COUNT]; // cpu buffer
     this->vb = new VertexBuffer(nullptr, MAX_VERTEX_COUNT * sizeof(Vertex));
-
 
     // vertex layout
     this->layout = new VertexBufferLayout();
@@ -63,22 +40,12 @@ GameData::GameData() {
     }
 
     this->ib = new IndexBuffer(indices, MAX_IDX_COUNT);
-
-    // view proj matrix
-    this->proj = glm::ortho(0.0f, (float)WIDTH, 0.f, (float)HEIGHT, -1.0f, 1.0f);
-    this->view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-
     // load game data
     this->load_textures();
     this->load_shaders();
     this->va->Unbind();
     this->vb->Unbind();
     this->ib->Unbind();
-
-
-    // set all glfw callback functions
-    glfwSetKeyCallback(this->window, key_callback);
-    glfwSetMouseButtonCallback(this->window, mouse_button_callback);
 }
 
 void GameData::load_textures() {
@@ -112,7 +79,6 @@ void GameData::load_shaders() {
 }
 
 GameData::~GameData() {
-    glfwTerminate();
     delete this->va;
     delete this->vb;
     delete this->layout;
@@ -153,36 +119,6 @@ void GameData::clear(glm::vec4 color) {
 }
 
 void GameData::init() {
-
-    std::cout << "Initializing glfw!\n";
- 
-    if (!glfwInit()) {
-        std::cout << "Could not initialize glfw!\n";
-        exit(1);
-    }
-    
-    glfwInitHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwInitHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwInitHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
-
-    std::cout << "Creating window!\n";
-    /* Create a windowed mode window and its OpenGL context */
-    this->window = glfwCreateWindow(WIDTH, HEIGHT, "Waves", NULL, NULL);
-    if (!this->window)
-    {
-        glfwTerminate();
-        std::cout << "Could not glfw create window!\n";
-        exit(1);
-    }
-
-    /* Make the window's context current */
-    glfwMakeContextCurrent(this->window);
-
-    glfwSwapInterval(1);
-
     std::cout << "Initializing glew!\n";
     unsigned int err = glewInit();
     if (GLEW_OK != err) {
@@ -204,7 +140,7 @@ void GameData::append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord,
     this->quad_buffer_ptr++;
 }
 
-glm::vec4 GameData::calculate_sprite_position(SpriteSheet &sheet, uint32_t row, uint32_t col) {
+glm::vec4 GameData::calculate_sprite_position(const SpriteSheet &sheet, uint32_t row, uint32_t col) {
     float tex_width = this->texture_map[sheet.tex_id]->GetWidth();
     float tex_height = this->texture_map[sheet.tex_id]->GetHeight();
     float w = 1.0f / (tex_width / sheet.cell_width);
@@ -217,7 +153,8 @@ glm::vec4 GameData::calculate_sprite_position(SpriteSheet &sheet, uint32_t row, 
 }
 
 // sprite sheet texture frame
-void GameData::draw_quad(glm::vec2 pos, SpriteSheet& sheet, uint32_t row, uint32_t col) {
+void GameData::draw_quad(glm::vec2 pos, const SpriteSheet& sheet, uint32_t row, uint32_t col, bool flip) {
+    
     if (this->index_count >= MAX_IDX_COUNT) {
         this->end_batch();
         this->flush();
@@ -231,6 +168,13 @@ void GameData::draw_quad(glm::vec2 pos, SpriteSheet& sheet, uint32_t row, uint32
     glm::vec2 top_right = { uv.z, uv.y };
     glm::vec2 bottom_right = { uv.z, uv.w };
     glm::vec2 bottom_left = { uv.x, uv.w };
+
+    if (flip) {
+        top_left = top_right;
+        bottom_left = bottom_right;
+        top_right = { uv.x, uv.y };
+        bottom_right = { uv.x, uv.w };
+    }
     
     append_vertex(pos, size, top_left, color, sheet.tex_id);
     append_vertex(glm::vec2(pos.x + size.x, pos.y), size, top_right, color, sheet.tex_id);
