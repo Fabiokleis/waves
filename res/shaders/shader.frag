@@ -8,6 +8,7 @@ in float v_tex_idx;
 
 uniform vec4 u_color;
 uniform sampler2D u_textures[32];
+uniform float u_time;
 
 void main()
 {
@@ -19,6 +20,6 @@ void main()
         color = tex_color;
 
     } else 
-        color = v_color * u_color;
+        color = v_color + sin(u_time)/2 - 0.2;
 
 }

@@ -1,12 +1,15 @@
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
-#include "gamedata.hpp"
 #include "entity.hpp"
-#include <stdint.h>
+#include "animation.hpp"
+#include "spritesheet.hpp"
+#include "window.hpp"
 
 class Player : public Entity {
-    
+private:
+    Animation *animation = nullptr;
+    SpriteSheet *sprite_sheet = nullptr;
 public:
     Player(
            glm::vec2 pos, glm::vec2 vel,
@@ -14,10 +17,14 @@ public:
            uint32_t cell_width, uint32_t cell_height,
            uint32_t rows, uint32_t cols);
 
-    ~Player(){}
+    ~Player() {
+        delete animation;
+        delete sprite_sheet;
+    }
 
-    void draw(GameData &gd);
-    void update();
+    void draw();
+    void update(const Window& window, float delta_time);
+    void move(glm::vec2 dir, float delta_time);
 };
 
 

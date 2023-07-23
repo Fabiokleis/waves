@@ -1,6 +1,8 @@
 #include "indexbuffer.hpp"
 #include "renderer.hpp"
 
+#include <GL/glew.h>
+
 IndexBuffer::IndexBuffer(const void* data, unsigned int count)
     : m_Count(count)
 {

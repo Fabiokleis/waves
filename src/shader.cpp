@@ -4,7 +4,8 @@
 #include <sstream>
 #include <iostream>
 
-#include "renderer.hpp"
+
+#include <GL/glew.h>
 
 Shader::Shader(const std::string& vertex_shader, const std::string& frag_shader)
     : vertex_shader(vertex_shader), frag_shader(frag_shader), m_RendererID(0)
@@ -47,6 +48,10 @@ void Shader::SetUniform1i(const std::string &name, int value)
     glUniform1i(location, value);
 }
 
+void Shader::SetUniform1f(const std::string &name, float v) {
+    int location = GetUniformLocation(name);
+    glUniform1f(location, v);
+}
 void Shader::SetUniform4f(const std::string &name, float v0, float v1, float v2, float v3)
 {
     int location = GetUniformLocation(name);

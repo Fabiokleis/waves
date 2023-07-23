@@ -43,12 +43,12 @@ void Window::swap_buffers() {
     glfwSwapBuffers(this->window);
 }
 
-bool Window::is_key_pressed(int keycode) {
+bool Window::is_key_pressed(int keycode) const {
     int state = glfwGetKey(this->window, keycode);
     return state == GLFW_PRESS || state == GLFW_REPEAT;
 }
 
-bool Window::is_mouse_button_pressed(int button) {
+bool Window::is_mouse_button_pressed(int button) const {
     int state = glfwGetMouseButton(this->window, button);
     return state == GLFW_PRESS;
 }

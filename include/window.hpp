@@ -19,8 +19,8 @@ public:
     void close_window();
     void poll_events();
     void swap_buffers();
-    bool is_key_pressed(int keycode);
-    bool is_mouse_button_pressed(int button);
+    bool is_key_pressed(int keycode) const;
+    bool is_mouse_button_pressed(int button) const;
     glm::vec2 get_mouse_pos();
     glm::vec2 get_size();
 };
