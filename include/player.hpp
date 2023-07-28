@@ -17,6 +17,7 @@ private:
     
     void move(glm::vec2 dir, float delta_time);
     void look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size);
+    
 public:
     Player(
            glm::vec2 pos, glm::vec2 vel,
@@ -25,11 +26,13 @@ public:
            uint32_t rows, uint32_t cols);
 
     ~Player() {
-        delete animation;
-        delete sprite_sheet;
+        if (animation)
+            delete animation;
+        if (sprite_sheet)
+            delete sprite_sheet;
     }
 
-    void draw();
+    void draw(glm::mat4 camera);
     void update(const Window& window, float delta_time);
     void apply_player_model(float scaler, glm::vec3 axis, float rotation);
 

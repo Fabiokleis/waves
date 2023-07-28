@@ -20,7 +20,7 @@ Player::Player(
     this->scale_factor = 2.0f;
 }
 
-void Player::draw() {
+void Player::draw(glm::mat4 camera) {
     glm::vec4 color = this->body.color;
     // each player draw call will do a OpenGL draw call
     Renderer::begin_batch();
@@ -29,7 +29,7 @@ void Player::draw() {
 
     Renderer::get_shader(0)->SetUniformMat4f("u_model", this->model);
    
-    Renderer::get_shader(0)->SetUniformMat4f("u_camera", Renderer::get_camera());
+    Renderer::get_shader(0)->SetUniformMat4f("u_camera", camera);
 
     glm::vec4 uv = this->animation->get_uv(*this->sprite_sheet, true, 0);
 

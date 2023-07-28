@@ -15,48 +15,32 @@
 
 #include <unordered_map>
 
-struct GameData {
-    glm::mat4 proj;
-    glm::mat4 view;
-    
-    VertexArray *va = nullptr;
-    VertexBuffer *vb = nullptr;
-    Vertex *quad_buffer = nullptr;
-    Vertex *quad_buffer_ptr = nullptr;
-    VertexBufferLayout *layout = nullptr;
-    IndexBuffer *ib = nullptr;
-    uint32_t index_count = 0;
-    
-    std::unordered_map<uint32_t, Texture*> texture_map;
-    std::unordered_map<uint32_t, Shader*> shader_map;
-};
+Renderer* Renderer::instance = nullptr;
 
-static GameData gd; 
-
-
-void Renderer::set_camera(glm::mat4 p, glm::mat4 v) {
-    gd.proj = p;
-    gd.view = v;
-}
-
-glm::mat4 Renderer::get_camera() {
-    return gd.proj * gd.view;
-}
-
-Shader* Renderer::get_shader(uint32_t shader_idx) {
+Shader* Renderer::get_shader_impl(uint32_t shader_idx) {
     return gd.shader_map[shader_idx];
 }
 
-glm::vec2 Renderer::get_texture_size(uint32_t tex_idx) {
+glm::vec2 Renderer::get_texture_size_impl(uint32_t tex_idx) {
     int width = gd.texture_map[tex_idx]->GetWidth();
     int height = gd.texture_map[tex_idx]->GetHeight();
     return glm::vec2(width, height);
 }
 
-Renderer::Renderer() {
+void Renderer::init_impl() {
 
-    // initialize glfw and glew
-    this->init();   
+    std::cout << "Initializing glew!\n";
+    unsigned int err = glewInit();
+    if (GLEW_OK != err) {
+        std::cout << "GLEW initialization error!\n";
+    }
+    
+    std::cout << glGetString(GL_VERSION) << "\n";
+    std::cout << glGetString(GL_RENDERER) << "\n";
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
     gd.quad_buffer = new Vertex[MAX_VERTEX_COUNT]; // cpu buffer
     gd.vb = new VertexBuffer(nullptr, MAX_VERTEX_COUNT * sizeof(Vertex));
 
@@ -86,57 +70,29 @@ Renderer::Renderer() {
     }
 
     gd.ib = new IndexBuffer(indices, MAX_IDX_COUNT);
-    // load game data
-    load_textures();
-    load_shaders();
-    gd.va->Unbind();
-    gd.vb->Unbind();
-    gd.ib->Unbind();
 }
 
-// just initialize glew
-void Renderer::init() {
-    std::cout << "Initializing glew!\n";
-    unsigned int err = glewInit();
-    if (GLEW_OK != err) {
-        std::cout << "GLEW initialization error!\n";
-    }
-    
-    std::cout << glGetString(GL_VERSION) << "\n";
-    std::cout << glGetString(GL_RENDERER) << "\n";
+void Renderer::load_texture_impl(const std::string &path) {
+    gd.texture_map[gd.texture_indexes] = new Texture(path);
+    gd.texture_indexes++;
 
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-}
-
-void Renderer::load_textures() {
-    std::cout << "Loading textures!\n";
-    
-    gd.texture_map[0] = new Texture(""); // 0 = white tex
-    gd.texture_map[1] = new Texture("res/textures/grid_0-1.png");
-    gd.texture_map[2] = new Texture("res/textures/Octocat.png");
-    gd.texture_map[3] = new Texture("res/textures/32x32-bat-sprite.png");
-
-    for (uint32_t i = 0; i < 4; ++i) {
+    for (uint32_t i = 0; i < gd.texture_indexes; ++i) {
         gd.texture_map[i]->Bind(i);
     }
 }
 
-void Renderer::load_shaders() {
-    std::cout << "Loading shaders!\n";
-    
-    gd.shader_map[0] = new Shader("res/shaders/shader.vert", "res/shaders/shader.frag");
-    
+void Renderer::load_shader_impl(const std::string& vert_path, const std::string& frag_path) {
+    gd.shader_map[gd.shader_indexes] = new Shader(vert_path, frag_path);
     // 0 = white tex, 1, 2, 3... = tex
     int v[MAX_TEXTURES];
     for (uint32_t i = 0; i < MAX_TEXTURES; ++i) {
         v[i] = i;
     }
-    
     // setup textures
-    gd.shader_map[0]->Bind();
-    gd.shader_map[0]->SetUinform1iv("u_textures", v, MAX_TEXTURES);
-    gd.shader_map[0]->Unbind();
+    gd.shader_map[gd.shader_indexes]->Bind();
+    gd.shader_map[gd.shader_indexes]->SetUinform1iv("u_textures", v, MAX_TEXTURES);
+    gd.shader_map[gd.shader_indexes]->Unbind();
+    gd.shader_indexes++;
 }
 
 Renderer::~Renderer() {
@@ -155,31 +111,33 @@ Renderer::~Renderer() {
         delete gd.shader_map[i];
         gd.shader_map.erase(i);
     }
+
+    delete instance;
 }
 
-void Renderer::begin_batch() {
+void Renderer::begin_batch_impl() {
     gd.quad_buffer_ptr = gd.quad_buffer;
 }
 
-void Renderer::end_batch() {
+void Renderer::end_batch_impl() {
     GLsizeiptr size = (uint8_t*)gd.quad_buffer_ptr - (uint8_t*)gd.quad_buffer;
     gd.vb->Bind();
     glBufferSubData(GL_ARRAY_BUFFER, 0, size, gd.quad_buffer);
 }
 
-void Renderer::flush() {
+void Renderer::flush_impl() {
     gd.va->Bind();
     glDrawElements(GL_TRIANGLES, gd.index_count, GL_UNSIGNED_INT, nullptr);    
   
     gd.index_count = 0; // reset the amount of drew quads
 }
 
-void Renderer::clear(glm::vec4 color) {
+void Renderer::clear_impl(glm::vec4 color) {
     glClearColor(color.x, color.y, color.z, color.w);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static void append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, glm::vec4 color, float tex_idx) {
+void Renderer::append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, glm::vec4 color, float tex_idx) {
     gd.quad_buffer_ptr->position = pos;
     gd.quad_buffer_ptr->color = color;
     gd.quad_buffer_ptr->tex_coords = tex_coord;
@@ -188,12 +146,12 @@ static void append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, gl
 }
 
 // texture uv
-void Renderer::draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint32_t tex_idx) {
+void Renderer::draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint32_t tex_idx) {
     
     if (gd.index_count >= MAX_IDX_COUNT) {
-        Renderer::end_batch();
-        Renderer::flush();
-        Renderer::begin_batch();
+        Renderer::end_batch_impl();
+        Renderer::flush_impl();
+        Renderer::begin_batch_impl();
     }
     
     tex_idx = (float) tex_idx;
@@ -213,12 +171,12 @@ void Renderer::draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint32_t t
 }
 
 // color fill
-void Renderer::draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 color) {
+void Renderer::draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 color) {
     
     if (gd.index_count >= MAX_IDX_COUNT) {
-        Renderer::end_batch();
-        Renderer::flush();
-        Renderer::begin_batch();
+        Renderer::end_batch_impl();
+        Renderer::flush_impl();
+        Renderer::begin_batch_impl();
     }
     
     append_vertex(pos, size, glm::vec2(0.0f, 0.0f), color, 0.0f);
