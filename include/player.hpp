@@ -10,6 +10,13 @@ class Player : public Entity {
 private:
     Animation *animation = nullptr;
     SpriteSheet *sprite_sheet = nullptr;
+
+    glm::mat4 model; // Mmodel . Vlocal
+
+    float scale_factor;
+    
+    void move(glm::vec2 dir, float delta_time);
+    void look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size);
 public:
     Player(
            glm::vec2 pos, glm::vec2 vel,
@@ -24,7 +31,8 @@ public:
 
     void draw();
     void update(const Window& window, float delta_time);
-    void move(glm::vec2 dir, float delta_time);
+    void apply_player_model(float scaler, glm::vec3 axis, float rotation);
+
 };
 
 

@@ -6,6 +6,8 @@
 
 #define ANIMATION_TIME 0.1
 
+#include <iostream>
+
 Player::Player(
            glm::vec2 pos, glm::vec2 vel,
            uint32_t texture_idx,
@@ -13,8 +15,9 @@ Player::Player(
            uint32_t rows, uint32_t cols) :
         Entity(pos, glm::vec2(cell_width, cell_height), vel) 
 {
-    this->animation = new Animation(ANIMATION_TIME);;
+    this->animation = new Animation(ANIMATION_TIME);
     this->sprite_sheet = new SpriteSheet(texture_idx, rows, cols, cell_width, cell_height);
+    this->scale_factor = 2.0f;
 }
 
 void Player::draw() {
@@ -23,20 +26,54 @@ void Player::draw() {
     Renderer::begin_batch();
     Renderer::get_shader(0)->Bind();
     Renderer::get_shader(0)->SetUniform4f("u_color", color.x, color.y, color.z, color.w);
+
+    Renderer::get_shader(0)->SetUniformMat4f("u_model", this->model);
+   
+    Renderer::get_shader(0)->SetUniformMat4f("u_camera", Renderer::get_camera());
+
+    glm::vec4 uv = this->animation->get_uv(*this->sprite_sheet, true, 0);
+
+    // to apply rotation around Z axis at center of the body 
+    glm::vec2 pos = glm::vec2(-this->body.size.x/2, -this->body.size.y/2);
     
-    glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(3, 3, 0.0));
-    glm::mat4 mvp = Renderer::get_camera() * model;
-    Renderer::get_shader(0)->SetUniformMat4f("u_MVP", mvp);
-
-    glm::vec4 uv = this->animation->get_uv(*this->sprite_sheet, true, 1);
-
     Renderer::draw_quad(
-                 this->body.position,
-                 this->body.size, uv,
-                 this->sprite_sheet->tex_idx);
+                        pos, // local position
+                        this->body.size, uv,
+                        this->sprite_sheet->tex_idx);
 
     Renderer::end_batch(); // copy cpu buffer to gpu
     Renderer::flush(); // draw triangles
+}
+
+void Player::apply_player_model(float scaler, glm::vec3 axis, float rotation) {
+    glm::vec3 scalar_vec = glm::vec3(scaler, scaler, 1.0);
+    
+    glm::vec3 pos = glm::vec3(
+                              this->body.position.x - (this->body.size.x/2 * scaler),
+                              this->body.position.y - (this->body.size.y/2 * scaler), 0.0f);
+
+    
+    glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos); // set object position in world
+    glm::mat4 scal = glm::scale(glm::mat4(1.0f), scalar_vec); // scale player size by scale factor
+    glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), axis); // apply rotation
+
+    this->model = translation * rot * scal; // player model matrix
+}
+
+void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) {
+    float y = window_size.y - mouse_pos.y;
+    glm::vec2 mapped_mouse = glm::vec2(mouse_pos.x, y);
+
+    float scaler = this->scale_factor;
+    
+    float ca = mapped_mouse.x - (this->body.position.x  - (this->body.size.x/2 * scaler));
+    float co =  mapped_mouse.y - (this->body.position.y  - (this->body.size.y/2 * scaler));
+
+    // 90 degress just to fit sprite position
+    float rotation = 90.0f + glm::degrees(glm::atan(co, ca));
+
+
+    this->apply_player_model(scaler, glm::vec3(0, 0, 1), rotation);
 }
 
 void Player::move(glm::vec2 dir, float delta_time) {
@@ -45,7 +82,7 @@ void Player::move(glm::vec2 dir, float delta_time) {
 }
 
 void Player::update(const Window &window, float delta_time) {
-
+    
     if (window.is_key_pressed(GLFW_KEY_LEFT) || window.is_key_pressed(GLFW_KEY_A)) {
         this->move(glm::vec2(-1.0f, 0.0f), delta_time);
     }
@@ -62,5 +99,6 @@ void Player::update(const Window &window, float delta_time) {
         this->move(glm::vec2(0.0f, -1.0f), delta_time);
     }
 
+    this->look_at_front_of_mouse(window.get_mouse_pos(), window.get_size());
     this->animation->update(*this->sprite_sheet, delta_time);
 }

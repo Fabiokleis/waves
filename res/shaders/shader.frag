@@ -20,6 +20,6 @@ void main()
         color = tex_color;
 
     } else 
-        color = v_color + sin(u_time)/2 - 0.2;
+        color = v_color + (sin(u_time) * cos(u_time));
 
 }
