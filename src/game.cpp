@@ -75,12 +75,12 @@ void Game::update() {
                                   p_pos.y - (p_size.y/2) - (p_size.y/2 * scale));
                                   
         glm::vec2 vel = glm::vec2(
-                                  PROJECTILE_VELOCITY * glm::sin(angle),
-                                  -PROJECTILE_VELOCITY * glm::cos(angle));
+                                  PROJECTILE_VELOCITY * glm::cos(angle),
+                                  PROJECTILE_VELOCITY * glm::sin(angle));
         
         uint32_t texture_idx = 2;
-        uint32_t cell_width = 32;
-        uint32_t cell_height = 32;
+        uint32_t cell_width = 16;
+        uint32_t cell_height = 16;
         uint32_t rows = 1;
         uint32_t cols = 1;
 
@@ -139,7 +139,7 @@ void Game::init() {
     // creating player with bat sprite sheet
     player = new Player(glm::vec2(100, 100), // world position
                               glm::vec2(200, 200),
-                              1, 32, 32, 4, 4); // tex_idx, tile width, tile height, rows, cols
+                              3, 32, 32, 1, 4); // tex_idx, tile width, tile height, rows, cols
     
     // view proj matrix
     translation = glm::vec3(0.f);
@@ -148,13 +148,13 @@ void Game::init() {
 
     player->camera_offset = translation;
     player->camera = proj * view;
-
 }
 
 void Game::load_textures() {
     Renderer::load_texture("");
     Renderer::load_texture("res/textures/32x32-bat-sprite.png");
-    Renderer::load_texture("res/textures/clay_stone.png");
+    Renderer::load_texture("res/textures/clay2.png");
+    Renderer::load_texture("res/textures/player.png");
 }
 
 void Game::load_shaders() {

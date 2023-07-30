@@ -15,6 +15,7 @@ private:
     float scale_factor = 1.f;
     float looking_at = 0.f;
     float shoot_timer = 0.f;
+    bool flip = false;
     
     void move(glm::vec2 dir, float delta_time);
     void look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size);

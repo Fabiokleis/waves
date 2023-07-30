@@ -30,7 +30,7 @@ void Player::draw() {
    
     Renderer::get_shader(0)->SetUniformMat4f("u_camera", this->camera);
 
-    glm::vec4 uv = this->animation->get_uv(*this->sprite_sheet, true, 0);
+    glm::vec4 uv = this->animation->get_uv(*this->sprite_sheet, this->flip, 0);
 
     // to apply rotation around Z axis at center of the body 
     glm::vec2 pos = glm::vec2(-this->body.size.x/2, -this->body.size.y/2);
@@ -55,7 +55,6 @@ void Player::apply_player_model(float scaler, glm::vec3 axis, float rotation) {
     glm::mat4 translation = glm::translate(glm::mat4(1.0f), pos); // set object position in world
     glm::mat4 scal = glm::scale(glm::mat4(1.0f), scalar_vec); // scale player size by scale factor
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(rotation), axis); // apply rotation
-
     this->model = translation * rot * scal; // player model matrix
 }
 
@@ -68,12 +67,18 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
     float ca = mapped_mouse.x - (this->body.position.x  - (this->body.size.x/2 * scaler));
     float co =  mapped_mouse.y - (this->body.position.y  - (this->body.size.y/2 * scaler));
 
-    // 90 degress just to fit sprite position
-    float rotation = 90 + glm::degrees(glm::atan(co, ca));
+    float rotation = glm::degrees(glm::atan(co, ca));
 
     this->looking_at = rotation;
 
-    this->apply_player_model(scaler, glm::vec3(0, 0, 1), rotation);
+    if (this->looking_at < 90 && this->looking_at > 0)
+        this->flip = true;
+    else if (this->looking_at > -90 && this->looking_at < 0)
+        this->flip = true;
+    else
+        this->flip = false;
+
+    this->apply_player_model(scaler, glm::vec3(0, 0, 1), 0.0);
 }
 
 void Player::move(glm::vec2 dir, float delta_time) {
