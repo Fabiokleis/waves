@@ -32,6 +32,7 @@ public:
     void set_custom_cursor_image(const std::string &icon_path);
     bool is_key_pressed(int keycode) const;
     bool is_mouse_button_pressed(int button) const;
+    bool is_mouse_button_released(int button) const;
     glm::vec2 get_mouse_pos() const;
     glm::vec2 get_size() const;
 };

@@ -1,10 +1,9 @@
 #include "player.hpp"
+#include "consts.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "renderer.hpp"
-
-#define ANIMATION_TIME 0.1
 
 #include <iostream>
 
@@ -15,12 +14,12 @@ Player::Player(
            uint32_t rows, uint32_t cols) :
         Entity(pos, glm::vec2(cell_width, cell_height), vel) 
 {
-    this->animation = new Animation(ANIMATION_TIME);
+    this->animation = new Animation(PLAYER_ANIMATION_TIME);
     this->sprite_sheet = new SpriteSheet(texture_idx, rows, cols, cell_width, cell_height);
-    this->scale_factor = 2.0f;
+    this->scale_factor = 2.f;
 }
 
-void Player::draw(glm::mat4 camera) {
+void Player::draw() {
     glm::vec4 color = this->body.color;
     // each player draw call will do a OpenGL draw call
     Renderer::begin_batch();
@@ -29,7 +28,7 @@ void Player::draw(glm::mat4 camera) {
 
     Renderer::get_shader(0)->SetUniformMat4f("u_model", this->model);
    
-    Renderer::get_shader(0)->SetUniformMat4f("u_camera", camera);
+    Renderer::get_shader(0)->SetUniformMat4f("u_camera", this->camera);
 
     glm::vec4 uv = this->animation->get_uv(*this->sprite_sheet, true, 0);
 
@@ -70,8 +69,9 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
     float co =  mapped_mouse.y - (this->body.position.y  - (this->body.size.y/2 * scaler));
 
     // 90 degress just to fit sprite position
-    float rotation = 90.0f + glm::degrees(glm::atan(co, ca));
+    float rotation = 90 + glm::degrees(glm::atan(co, ca));
 
+    this->looking_at = rotation;
 
     this->apply_player_model(scaler, glm::vec3(0, 0, 1), rotation);
 }
@@ -79,6 +79,11 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
 void Player::move(glm::vec2 dir, float delta_time) {
     glm::vec2 vel = this->body.velocity * dir;
     this->body.position += vel * delta_time;
+}
+
+bool Player::throw_projectile(const Window& window) {
+    return shoot_timer >= PLAYER_MAX_SHOOT_TIME &&
+        window.is_mouse_button_pressed(GLFW_MOUSE_BUTTON_LEFT);
 }
 
 void Player::update(const Window &window, float delta_time) {
@@ -99,6 +104,11 @@ void Player::update(const Window &window, float delta_time) {
         this->move(glm::vec2(0.0f, -1.0f), delta_time);
     }
 
+    if (shoot_timer >= PLAYER_MAX_SHOOT_TIME)
+        shoot_timer = 0;
+    else
+        this->shoot_timer += delta_time;
+    
     this->look_at_front_of_mouse(window.get_mouse_pos(), window.get_size());
     this->animation->update(*this->sprite_sheet, delta_time);
 }

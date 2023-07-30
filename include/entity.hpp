@@ -2,6 +2,7 @@
 #define __ENTITY_H__
 
 #include <glm/glm.hpp>
+#include "window.hpp"
 
 class Entity {
 private:
@@ -24,6 +25,9 @@ public:
     inline const glm::vec4& get_color() const { return this->body.color; }
     void set_position(glm::vec2 pos) { this->body.position = pos; }
     void set_velocity(glm::vec2 vel) { this->body.velocity = vel; }
+
+    virtual void update(const Window &window, float delta_time) = 0;
+    virtual void draw() = 0;
 
 };
 

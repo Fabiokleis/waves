@@ -3,6 +3,7 @@
 #include "game.hpp"
 #include "consts.hpp"
 #include "renderer.hpp"
+#include "projectile.hpp"
 
 using namespace Waves;
 
@@ -16,6 +17,11 @@ Game::~Game() {
 
     if (player)
         delete player;
+
+    for (auto proj : projectiles) {
+        delete proj;
+    }
+    projectiles.clear();
 }
 
 void Game::run() {
@@ -30,6 +36,8 @@ void Game::run() {
         window->poll_events();
 
 
+        std::cout << projectiles.size() << "\n";
+        
         // update entities
         update();
 
@@ -49,9 +57,44 @@ void Game::run() {
     }
 }
 
+void Game::sync_player_camera() {
+    view = glm::translate(glm::mat4(1.f), player->camera_offset);
+    player->camera = proj * view;
+}
+
 void Game::update() {
-    player->update(*window, (float)delta_time);
     quit = window->is_key_pressed(GLFW_KEY_ESCAPE);
+    player->update(*window, (float)delta_time);
+    if (player->throw_projectile(*window)) {
+        float angle = glm::radians(player->get_rotation());
+        float scale = player->get_scale();
+        glm::vec2 p_pos = player->get_position();
+        glm::vec2 p_size = player->get_size();
+        glm::vec2 pos = glm::vec2(
+                                  p_pos.x - (p_size.x/2) - (p_size.x/2 * scale),
+                                  p_pos.y - (p_size.y/2) - (p_size.y/2 * scale));
+                                  
+        glm::vec2 vel = glm::vec2(
+                                  PROJECTILE_VELOCITY * glm::sin(angle),
+                                  -PROJECTILE_VELOCITY * glm::cos(angle));
+        
+        uint32_t texture_idx = 2;
+        uint32_t cell_width = 32;
+        uint32_t cell_height = 32;
+        uint32_t rows = 1;
+        uint32_t cols = 1;
+
+        projectiles.push_back(new Projectile(pos, vel, texture_idx, cell_width, cell_height, rows, cols));
+    }
+
+    for (uint32_t i = 0; i < projectiles.size(); ++i) {
+        if (projectiles[i]->ded)
+            projectiles.erase(projectiles.begin() + i);
+        else
+            projectiles[i]->update(*window, delta_time);
+    }
+    
+    sync_player_camera();
 }
 
 void Game::draw() {
@@ -73,26 +116,17 @@ void Game::draw() {
                 glm::vec4 color = { (x + 10) / 20.0f, 0.6, (y + 10) / 20.0f, 1.0f };      
                 Renderer::draw_quad(glm::vec2(x * 60, y * 60), glm::vec2(50, 50), color); 
             }                                                                             
-        }                                                                                 
-    }                                                                                     
+        }
+
+        for (auto proj : projectiles) {
+            proj->draw();
+        }
+        
+    }
     Renderer::end_batch();                                                                
-    Renderer::flush();
-
-    Renderer::begin_batch();                                                              
-    {                                                                                     
-        glm::mat4 model = glm::mat4(1.0f);
-        Renderer::get_shader(0)->Bind();                                                  
-        Renderer::get_shader(0)->SetUniformMat4f("u_camera", proj * view);
-        Renderer::get_shader(0)->SetUniformMat4f("u_model", model);
-        Renderer::get_shader(0)->SetUniform4f("u_color", 0.5, 1, 1, 1.0f);                
-        Renderer::get_shader(0)->SetUniform1f("u_time", total_time);                           
-
-        Renderer::draw_quad(glm::vec2(WIDTH/2, HEIGHT/2), glm::vec2(50, 50), glm::vec4(1.f, 0.f, 0.f, 1.f));
-    }                                                                                     
-    Renderer::end_batch();                                                                
-    Renderer::flush();     
-
-    player->draw(proj * view);
+    Renderer::flush();        
+    
+    player->draw();
 }
 
 void Game::init() {
@@ -108,13 +142,17 @@ void Game::init() {
                               1, 32, 32, 4, 4); // tex_idx, tile width, tile height, rows, cols
     
     // view proj matrix
+    translation = glm::vec3(0.f);
     proj = glm::ortho(0.0f, (float)WIDTH, 0.f, (float)HEIGHT, -1.0f, 1.0f);
-    view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+    view = glm::translate(glm::mat4(1.0f), translation);
+
+    player->camera_offset = translation;
+    player->camera = proj * view;
 
 }
 
 void Game::load_textures() {
-    Renderer::load_texture(""); // 0 = white tex
+    Renderer::load_texture("");
     Renderer::load_texture("res/textures/32x32-bat-sprite.png");
     Renderer::load_texture("res/textures/clay_stone.png");
 }

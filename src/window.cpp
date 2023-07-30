@@ -88,6 +88,11 @@ bool Window::is_mouse_button_pressed(int button) const {
     return state == GLFW_PRESS;
 }
 
+bool Window::is_mouse_button_released(int button) const {
+    int state = glfwGetMouseButton(this->window, button);
+    return state == GLFW_RELEASE;
+}
+
 glm::vec2 Window::get_mouse_pos() const {
     double xpos, ypos;
     glfwGetCursorPos(this->window, &xpos, &ypos);

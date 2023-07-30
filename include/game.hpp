@@ -3,10 +3,11 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-//#include <vector>
+#include <vector>
 #include "renderer.hpp"
 #include "window.hpp"
 #include "player.hpp"
+#include "projectile.hpp"
 
 namespace Waves {
     
@@ -15,14 +16,18 @@ namespace Waves {
         void init();
         void load_textures();
         void load_shaders();
+        void sync_player_camera();
 
     private:
         Window *window = nullptr;
         Player *player = nullptr;
 
+        glm::vec3 translation;
         glm::mat4 proj;
         glm::mat4 view;
 
+        std::vector<Projectile*> projectiles;
+        
         bool quit = false;
         float total_time;
         double start_time;
