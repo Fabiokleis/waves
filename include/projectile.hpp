@@ -15,10 +15,11 @@ private:
  
     
 public:
-    Projectile(glm::vec2 pos, glm::vec2 size, glm::vec2 vel);
+    Projectile(glm::vec2 pos, glm::vec2 size, glm::vec2 vel, glm::vec2 scale);
     Projectile(
                glm::vec2 pos,
                glm::vec2 vel,
+               glm::vec2 scale,
                uint32_t texture_idx,
                uint32_t cell_width,
                uint32_t cell_height,

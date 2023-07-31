@@ -1,9 +1,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "game.hpp"
+#include "player.hpp"
 #include "consts.hpp"
 #include "renderer.hpp"
 #include "projectile.hpp"
+
+#include <cstdlib>
+#include <iostream>
 
 using namespace Waves;
 
@@ -22,6 +26,11 @@ Game::~Game() {
         delete proj;
     }
     projectiles.clear();
+
+    for (auto enemie : enemies) {
+        delete enemie;
+    }
+    enemies.clear();
 }
 
 void Game::run() {
@@ -34,9 +43,6 @@ void Game::run() {
     while (!quit) {
         total_time += (float)delta_time;
         window->poll_events();
-
-
-        std::cout << projectiles.size() << "\n";
         
         // update entities
         update();
@@ -67,12 +73,12 @@ void Game::update() {
     player->update(*window, (float)delta_time);
     if (player->throw_projectile(*window)) {
         float angle = glm::radians(player->get_rotation());
-        float scale = player->get_scale();
+        glm::vec2 scale = player->get_scale();
         glm::vec2 p_pos = player->get_position();
         glm::vec2 p_size = player->get_size();
         glm::vec2 pos = glm::vec2(
-                                  p_pos.x - (p_size.x/2) - (p_size.x/2 * scale),
-                                  p_pos.y - (p_size.y/2) - (p_size.y/2 * scale));
+                                  p_pos.x - (p_size.x/2) - (p_size.x/2 * scale.x),
+                                  p_pos.y - (p_size.y/2) - (p_size.y/2 * scale.y));
                                   
         glm::vec2 vel = glm::vec2(
                                   PROJECTILE_VELOCITY * glm::cos(angle),
@@ -84,16 +90,53 @@ void Game::update() {
         uint32_t rows = 1;
         uint32_t cols = 1;
 
-        projectiles.push_back(new Projectile(pos, vel, texture_idx, cell_width, cell_height, rows, cols));
+        projectiles.push_back(new Projectile(pos, vel, glm::vec2(1.f, 1.f), texture_idx, cell_width, cell_height, rows, cols));
     }
 
-    for (uint32_t i = 0; i < projectiles.size(); ++i) {
-        if (projectiles[i]->ded)
-            projectiles.erase(projectiles.begin() + i);
-        else
-            projectiles[i]->update(*window, delta_time);
+    for (uint32_t i = 0; i < enemies.size(); ++i) {
+        auto enemie = enemies[i];
+
+        // verify and resolve enemie x projectile collision
+        for (uint32_t i = 0; i < projectiles.size(); ++i) {
+            auto projectile = projectiles[i];
+            glm::vec2 size0 = enemie->get_size() * enemie->get_scale();
+            glm::vec2 size1 = projectile->get_size() * projectile->get_scale();
+            glm::vec2 pos0 = enemie->get_position();
+            glm::vec2 pos1 = projectile->get_position();
+            
+            if (collision_detect(pos0, size0, pos1, size1)) {
+                projectile->ded = true;
+                enemie->ded = true;
+                std::cout << "kill enemie" << "\n";
+            }
+
+            if (projectile->ded)
+                projectiles.erase(projectiles.begin() + i);
+        }
+        
+        
+        if (enemie->ded)
+            enemies.erase(enemies.begin() + i);
+        else {
+            enemie->update(*window, delta_time);
+
+            // verify and resolve player x enemie collision
+            glm::vec2 size0 = player->get_size() * player->get_scale();
+            glm::vec2 size1 = enemie->get_size() * enemie->get_scale();
+            glm::vec2 pos0 = player->get_position() - size0;
+            glm::vec2 pos1 = enemie->get_position();
+        
+            if (collision_detect(pos0, size0, pos1, size1))
+                std::cout << "collide player x enemie" << "\n";
+        }
     }
-    
+
+    for (auto projectile : projectiles) {
+        projectile->update(*window, delta_time);   
+    }
+
+
+
     sync_player_camera();
 }
 
@@ -118,16 +161,60 @@ void Game::draw() {
             }                                                                             
         }
 
+        for (auto enemie : enemies) {
+            enemie->draw();
+        }
         for (auto proj : projectiles) {
             proj->draw();
         }
-        
+
     }
     Renderer::end_batch();                                                                
     Renderer::flush();        
     
     player->draw();
 }
+
+float Game::norma(glm::vec2 v0) {
+    return (v0.x * v0.x + v0.y * v0.y);
+}
+
+float Game::sat_collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1) {
+    glm::vec2 va[4], vb[4];
+    va[0] = glm::vec2(pos0.x, pos0.y);
+    va[1] = glm::vec2(pos0.x + size0.x, pos0.y);
+    va[2] = glm::vec2(pos0.x + size0.x, pos0.y + size0.y);
+    va[3] = glm::vec2(pos0.x, pos0.y + size0.y);
+
+    vb[0] = glm::vec2(pos1.x, pos1.y);
+    vb[1] = glm::vec2(pos1.x + size1.x, pos1.y);
+    vb[2] = glm::vec2(pos1.x + size1.x, pos1.y + size1.y);
+    vb[3] = glm::vec2(pos1.x, pos1.y + size1.y);
+
+    
+    float separation = -99999.0f;
+    for (uint32_t i = 0; i < 4; ++i) {
+        glm::vec2 axis = (va[(i + 1) % 4] - va[i]);
+        glm::vec2 p_axis = glm::vec2(axis.y, -axis.x);
+        glm::vec2 normal = glm::vec2(p_axis.x/norma(p_axis), p_axis.y/norma(p_axis));
+        float minsep = 99999.0f;
+
+        for (uint32_t j = 0; j < 4; ++j) {
+            minsep = std::min(minsep, glm::dot(vb[j] - va[i], normal));   
+        }
+        
+        if (minsep > separation) {
+            separation = minsep;
+        }
+    }
+    return separation;
+}
+
+bool Game::collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1) {
+    return sat_collision_detect(pos0, size0, pos1, size1) <= 0 &&
+        sat_collision_detect(pos1, size1, pos0, size0) <= 0;
+}
+
 
 void Game::init() {
     window = new Window("Waves", WIDTH, HEIGHT);
@@ -137,9 +224,13 @@ void Game::init() {
     load_shaders();
 
     // creating player with bat sprite sheet
-    player = new Player(glm::vec2(100, 100), // world position
-                              glm::vec2(200, 200),
-                              3, 32, 32, 1, 4); // tex_idx, tile width, tile height, rows, cols
+    player = new Player(glm::vec2(WIDTH/2, HEIGHT/2), // world position
+                        glm::vec2(200.f, 200.f), glm::vec2(1.f, 1.f),
+                              3, 32, 64, 8, 4); // tex_idx, tile width, tile height, rows, cols
+
+    // creating a weapon to player
+    
+    player->set_weapon(new Item(glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f), glm::vec2(0.5f, 0.5f), 4, 64, 64, 1, 1));
     
     // view proj matrix
     translation = glm::vec3(0.f);
@@ -148,6 +239,20 @@ void Game::init() {
 
     player->camera_offset = translation;
     player->camera = proj * view;
+
+    srand(time(0));
+    for (uint32_t i = 0; i < 100; ++i) {
+        glm::vec2 pos = glm::vec2(rand() % WIDTH, rand() % HEIGHT);                                  
+        glm::vec2 vel = glm::vec2(ENEMIE_VELOCITY, ENEMIE_VELOCITY);
+        
+        uint32_t texture_idx = 1;
+        uint32_t cell_width = 32;
+        uint32_t cell_height = 32;
+        uint32_t rows = 4;
+        uint32_t cols = 4;
+        enemies.push_back(new Enemie(pos, vel, glm::vec2(1.f, 1.f), texture_idx, cell_width, cell_height, rows, cols));
+        enemies[i]->set_target((Entity*)player);
+    }
 }
 
 void Game::load_textures() {
@@ -155,6 +260,10 @@ void Game::load_textures() {
     Renderer::load_texture("res/textures/32x32-bat-sprite.png");
     Renderer::load_texture("res/textures/clay2.png");
     Renderer::load_texture("res/textures/player.png");
+    Renderer::load_texture("res/textures/staff.png");
+    Renderer::load_texture("res/textures/clay_stone.png");
+    //Renderer::load_texture("res/textures/tilemap.png");
+    
 }
 
 void Game::load_shaders() {

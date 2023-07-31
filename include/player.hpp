@@ -4,15 +4,16 @@
 #include "entity.hpp"
 #include "animation.hpp"
 #include "spritesheet.hpp"
+#include "item.hpp"
 #include "window.hpp"
 
 class Player : public Entity {
 private:
     Animation *animation = nullptr;
     SpriteSheet *sprite_sheet = nullptr;
+    Item *weapon = nullptr;
 
     glm::mat4 model = glm::mat4(1.f); // Mmodel . Vlocal
-    float scale_factor = 1.f;
     float looking_at = 0.f;
     float shoot_timer = 0.f;
     bool flip = false;
@@ -24,7 +25,7 @@ private:
     
 public:
     Player(
-           glm::vec2 pos, glm::vec2 vel,
+           glm::vec2 pos, glm::vec2 vel, glm::vec2 scale,
            uint32_t texture_idx,
            uint32_t cell_width, uint32_t cell_height,
            uint32_t rows, uint32_t cols);
@@ -34,16 +35,20 @@ public:
             delete animation;
         if (sprite_sheet)
             delete sprite_sheet;
+        if (weapon)
+            delete weapon;
     }
 
     glm::mat4 camera = glm::mat4(1.f);
     glm::vec3 camera_offset = glm::vec3(0.f);
 
     float get_rotation() const { return looking_at; }
-    float get_scale() const { return scale_factor; }
 
     bool throw_projectile(const Window& window);
-    
+    void set_weapon(Item *n_weapon) {
+        if (weapon == nullptr)
+            weapon = n_weapon;
+    }
     void draw() override;
     void update(const Window& window, float delta_time) override;
 

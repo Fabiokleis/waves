@@ -8,6 +8,7 @@
 #include "window.hpp"
 #include "player.hpp"
 #include "projectile.hpp"
+#include "enemie.hpp"
 
 namespace Waves {
     
@@ -18,6 +19,12 @@ namespace Waves {
         void load_shaders();
         void sync_player_camera();
 
+        
+        bool collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1);
+        float sat_collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1);
+        float norma(glm::vec2 v0);
+
+
     private:
         Window *window = nullptr;
         Player *player = nullptr;
@@ -26,6 +33,7 @@ namespace Waves {
         glm::mat4 proj;
         glm::mat4 view;
 
+        std::vector<Enemie *> enemies;
         std::vector<Projectile*> projectiles;
         
         bool quit = false;
