@@ -143,17 +143,20 @@ void Game::update() {
 void Game::draw() {
 
     Renderer::clear(glm::vec4(0.0, 0.0f, 0.0, 1.0));
+
     
     // map
     Renderer::begin_batch();                                                              
-    {                                                                                     
+    {
+        
         glm::mat4 model = glm::mat4(1.0f);
         Renderer::get_shader(0)->Bind();                                                  
         Renderer::get_shader(0)->SetUniformMat4f("u_camera", proj * view);
         Renderer::get_shader(0)->SetUniformMat4f("u_model", model);
         Renderer::get_shader(0)->SetUniform4f("u_color", 0.5, 1, 1, 1.0f);                
         Renderer::get_shader(0)->SetUniform1f("u_time", total_time);                           
-                                                                                              
+
+        
         for (int y = 0; y < 20; ++y) {                                                    
             for (int x = 0; x < 20; ++x) {                                                
                 glm::vec4 color = { (x + 10) / 20.0f, 0.6, (y + 10) / 20.0f, 1.0f };      
@@ -230,7 +233,7 @@ void Game::init() {
 
     // creating a weapon to player
     
-    player->set_weapon(new Item(glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f), glm::vec2(0.5f, 0.5f), 4, 64, 64, 1, 1));
+    player->set_weapon(new Item(glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f), glm::vec2(1.f, 1.f), 4, 64, 64, 1, 3));
     
     // view proj matrix
     translation = glm::vec3(0.f);
@@ -241,7 +244,7 @@ void Game::init() {
     player->camera = proj * view;
 
     srand(time(0));
-    for (uint32_t i = 0; i < 100; ++i) {
+    for (uint32_t i = 0; i < 1; ++i) {
         glm::vec2 pos = glm::vec2(rand() % WIDTH, rand() % HEIGHT);                                  
         glm::vec2 vel = glm::vec2(ENEMIE_VELOCITY, ENEMIE_VELOCITY);
         
@@ -260,7 +263,7 @@ void Game::load_textures() {
     Renderer::load_texture("res/textures/32x32-bat-sprite.png");
     Renderer::load_texture("res/textures/clay2.png");
     Renderer::load_texture("res/textures/player.png");
-    Renderer::load_texture("res/textures/staff.png");
+    Renderer::load_texture("res/textures/staff2.png");
     Renderer::load_texture("res/textures/clay_stone.png");
     //Renderer::load_texture("res/textures/tilemap.png");
     
