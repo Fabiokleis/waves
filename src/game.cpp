@@ -5,7 +5,7 @@
 #include "consts.hpp"
 #include "renderer.hpp"
 #include "projectile.hpp"
-
+#include "map.hpp"
 #include <cstdlib>
 #include <iostream>
 
@@ -22,6 +22,9 @@ Game::~Game() {
     if (player)
         delete player;
 
+    if (tile_map)
+	delete tile_map;
+	    
     for (auto proj : projectiles) {
         delete proj;
     }
@@ -69,7 +72,7 @@ void Game::sync_player_camera() {
 }
 
 void Game::update() {
-    quit = window->is_key_pressed(GLFW_KEY_ESCAPE);
+    quit = window->is_key_pressed(GLFW_KEY_ESCAPE) || window->window_should_close();
     player->update(*window, (float)delta_time);
     if (player->throw_projectile(*window)) {
         float angle = glm::radians(player->get_rotation());
@@ -84,13 +87,17 @@ void Game::update() {
                                   PROJECTILE_VELOCITY * glm::cos(angle),
                                   PROJECTILE_VELOCITY * glm::sin(angle));
         
-        uint32_t texture_idx = 2;
         uint32_t cell_width = 16;
         uint32_t cell_height = 16;
         uint32_t rows = 1;
         uint32_t cols = 1;
 
-        projectiles.push_back(new Projectile(pos, vel, glm::vec2(1.f, 1.f), texture_idx, cell_width, cell_height, rows, cols));
+        projectiles.push_back(new Projectile(
+					     pos, vel,
+					     glm::vec2(1.f, 1.f),
+					     "projectile0",
+					     cell_width, cell_height,
+					     rows, cols));
     }
 
     for (uint32_t i = 0; i < enemies.size(); ++i) {
@@ -155,14 +162,7 @@ void Game::draw() {
         Renderer::get_shader(0)->SetUniformMat4f("u_model", model);
         Renderer::get_shader(0)->SetUniform4f("u_color", 0.5, 1, 1, 1.0f);                
         Renderer::get_shader(0)->SetUniform1f("u_time", total_time);                           
-
-        
-        for (int y = 0; y < 20; ++y) {                                                    
-            for (int x = 0; x < 20; ++x) {                                                
-                glm::vec4 color = { (x + 10) / 20.0f, 0.6, (y + 10) / 20.0f, 1.0f };      
-                Renderer::draw_quad(glm::vec2(x * 60, y * 60), glm::vec2(50, 50), color); 
-            }                                                                             
-        }
+	tile_map->draw();	
 
         for (auto enemie : enemies) {
             enemie->draw();
@@ -223,17 +223,18 @@ void Game::init() {
     window = new Window("Waves", WIDTH, HEIGHT);
     window->set_custom_cursor_image("res/textures/mouse_icon.png");
     Renderer::init();
+    
     load_textures();
     load_shaders();
-
     // creating player with bat sprite sheet
     player = new Player(glm::vec2(WIDTH/2, HEIGHT/2), // world position
                         glm::vec2(200.f, 200.f), glm::vec2(1.f, 1.f),
-                              3, 32, 64, 8, 4); // tex_idx, tile width, tile height, rows, cols
+                              "player", 32, 64, 8, 4); // tex_key, tile width, tile height, rows, cols
 
     // creating a weapon to player
-    
-    player->set_weapon(new Item(glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f), glm::vec2(1.f, 1.f), 4, 64, 64, 1, 3));
+    player->set_weapon(new Item(
+				glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f),
+				glm::vec2(1.f, 1.f), "weapon0", 64, 64, 1, 3));
     
     // view proj matrix
     translation = glm::vec3(0.f);
@@ -248,25 +249,29 @@ void Game::init() {
         glm::vec2 pos = glm::vec2(rand() % WIDTH, rand() % HEIGHT);                                  
         glm::vec2 vel = glm::vec2(ENEMIE_VELOCITY, ENEMIE_VELOCITY);
         
-        uint32_t texture_idx = 1;
         uint32_t cell_width = 32;
         uint32_t cell_height = 32;
         uint32_t rows = 4;
         uint32_t cols = 4;
-        enemies.push_back(new Enemie(pos, vel, glm::vec2(1.f, 1.f), texture_idx, cell_width, cell_height, rows, cols));
+        enemies.push_back(new Enemie(
+				     pos, vel,
+				     glm::vec2(1.f, 1.f),
+				     "enemie0",
+				     cell_width, cell_height,
+				     rows, cols));
         enemies[i]->set_target((Entity*)player);
     }
+
+    // load map from tiled editor project file
+    tile_map = new Map("res/maps/map.tmj");
 }
 
 void Game::load_textures() {
-    Renderer::load_texture("");
-    Renderer::load_texture("res/textures/32x32-bat-sprite.png");
-    Renderer::load_texture("res/textures/clay2.png");
-    Renderer::load_texture("res/textures/player.png");
-    Renderer::load_texture("res/textures/staff2.png");
-    Renderer::load_texture("res/textures/clay_stone.png");
-    //Renderer::load_texture("res/textures/tilemap.png");
-    
+    Renderer::load_texture("white", "");
+    Renderer::load_texture("player", "res/textures/player.png");
+    Renderer::load_texture("enemie0", "res/textures/32x32-bat-sprite.png");
+    Renderer::load_texture("projectile0", "res/textures/clay2.png");
+    Renderer::load_texture("weapon0", "res/textures/staff2.png");
 }
 
 void Game::load_shaders() {

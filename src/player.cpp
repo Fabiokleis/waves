@@ -9,13 +9,13 @@
 
 Player::Player(
            glm::vec2 pos, glm::vec2 vel, glm::vec2 scale,
-           uint32_t texture_idx,
+           const std::string& texture_key,
            uint32_t cell_width, uint32_t cell_height,
            uint32_t rows, uint32_t cols) :
     Entity(pos, glm::vec2(cell_width, cell_height), vel, scale) 
 {
     animation = new Animation(PLAYER_ANIMATION_TIME);
-    sprite_sheet = new SpriteSheet(texture_idx, rows, cols, cell_width, cell_height);
+    sprite_sheet = new SpriteSheet(texture_key, rows, cols, cell_width, cell_height);
     lifebar = new StatusBar(
                             this,
                             glm::vec2(PLAYER_LIFEBAR_WIDTH, PLAYER_LIFEBAR_HEIGHT),
@@ -42,7 +42,7 @@ void Player::draw() {
     Renderer::draw_quad(
                         pos, // local position
                         this->body.size, uv,
-                        this->sprite_sheet->tex_idx);
+                        this->sprite_sheet->tex);
 
     Renderer::end_batch(); // copy cpu buffer to gpu
     Renderer::flush(); // draw triangles

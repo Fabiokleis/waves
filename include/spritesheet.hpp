@@ -2,6 +2,7 @@
 #define __SPRITE_SHEET_H__
 
 #include <stdint.h>
+#include <string>
 
 class SpriteSheet {
 public:
@@ -10,9 +11,12 @@ public:
     float cell_width;
     float cell_height;
 
-    uint32_t tex_idx;
+    std::string tex;
 
-    SpriteSheet(uint32_t tex_id, uint32_t rows, uint32_t cols, uint32_t cell_width, uint32_t cell_height);
+    SpriteSheet(
+		const std::string& tex_key,
+		uint32_t rows, uint32_t cols,
+		uint32_t cell_width, uint32_t cell_height);
     ~SpriteSheet();
 };
 

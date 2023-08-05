@@ -1,51 +1,41 @@
 #ifndef __MAP_H__
 #define __MAP_H__
 
-#include "entity.hpp"
-#include "animation.hpp"
-#include "spritesheet.hpp"
-#include "window.hpp"
+#include <tileson.hpp>
 #include <vector>
 
-#define MAP_CELLS 32
-
-class Tile : public Entity {
-private:
-    
-public:
-    Tile(
-          glm::vec2 pos,
-          glm::vec2 vel,
-          glm::vec2 scale,
-          uint32_t texture_idx,
-          uint32_t cell_width,
-          uint32_t cell_height,
-          uint32_t rows,
-          uint32_t cols
-          );
-    ~Tile() {
-        if (nullptr != animation)
-            delete animation;
-        if (nullptr != sprite_sheet)
-            delete sprite_sheet;
-    }
-
-    Animation *animation = nullptr;
-    SpriteSheet *sprite_sheet = nullptr;
-
-    void draw() override;
-    void update(const Window& window, float delta_time) override;
-};
-
+#include "consts.hpp"
+#include "entity.hpp"
+#include "spritesheet.hpp"
 
 class Map {
-        
 private:
-    std::vector<std::vector<Tile *>> tiles;
+
+    struct Tile {
+	uint32_t id;
+	uint32_t row;
+	uint32_t col;
+	glm::vec2 pos;
+	glm::vec2 size;
+    };
+
+    uint32_t cols;
+    uint32_t width;
+    uint32_t height;
+    
+    std::unique_ptr<tson::Map> tiled_map;
+    std::vector<uint32_t> data;
+    std::vector<Tile> tiles;
+    SpriteSheet *sprite_sheet = nullptr;
+
+    void populate_tiles();
     
 public:
-    Map();
+    Map(const std::string& map_file_path);
     ~Map();
+
+    void update() {}
+    void draw();
 };
 
 #endif // __MAP_H__: header

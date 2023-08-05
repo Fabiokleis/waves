@@ -9,6 +9,7 @@
 #include "player.hpp"
 #include "projectile.hpp"
 #include "enemie.hpp"
+#include "map.hpp"
 
 namespace Waves {
     
@@ -20,14 +21,19 @@ namespace Waves {
         void sync_player_camera();
 
         
-        bool collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1);
-        float sat_collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1);
+        bool collision_detect(
+			      glm::vec2 pos0, glm::vec2 size0,
+			      glm::vec2 pos1, glm::vec2 size1);
+        float sat_collision_detect(
+				   glm::vec2 pos0, glm::vec2 size0,
+				   glm::vec2 pos1, glm::vec2 size1);
         float norma(glm::vec2 v0);
 
 
     private:
         Window *window = nullptr;
         Player *player = nullptr;
+	Map *tile_map = nullptr;
 
         glm::vec3 translation;
         glm::mat4 proj;

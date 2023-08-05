@@ -33,6 +33,7 @@ public:
     bool is_key_pressed(int keycode) const;
     bool is_mouse_button_pressed(int button) const;
     bool is_mouse_button_released(int button) const;
+    bool window_should_close();
     glm::vec2 get_mouse_pos() const;
     glm::vec2 get_size() const;
 };
