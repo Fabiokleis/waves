@@ -223,9 +223,13 @@ void Game::init() {
     window = new Window("Waves", WIDTH, HEIGHT);
     window->set_custom_cursor_image("res/textures/mouse_icon.png");
     Renderer::init();
-    
+
     load_textures();
     load_shaders();
+
+    // load map from tiled editor project file
+    tile_map = new Map("res/maps/map.tmj");
+    
     // creating player with bat sprite sheet
     player = new Player(glm::vec2(WIDTH/2, HEIGHT/2), // world position
                         glm::vec2(200.f, 200.f), glm::vec2(1.f, 1.f),
@@ -261,9 +265,6 @@ void Game::init() {
 				     rows, cols));
         enemies[i]->set_target((Entity*)player);
     }
-
-    // load map from tiled editor project file
-    tile_map = new Map("res/maps/map.tmj");
 }
 
 void Game::load_textures() {
