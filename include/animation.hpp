@@ -16,7 +16,7 @@ public:
     ~Animation();
 
     glm::vec4 get_uv(const SpriteSheet &sheet, bool flip, uint32_t row);
-    glm::vec4 calculate_sprite_position(const SpriteSheet &sheet, uint32_t row, uint32_t col);
+    static glm::vec4 calculate_sprite_position(const SpriteSheet &sheet, uint32_t row, uint32_t col);
     void update(const SpriteSheet &sheet, float dt);
 };
 

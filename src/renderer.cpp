@@ -21,9 +21,9 @@ Shader* Renderer::get_shader_impl(uint32_t shader_idx) {
     return gd.shader_map[shader_idx];
 }
 
-glm::vec2 Renderer::get_texture_size_impl(uint32_t tex_idx) {
-    int width = gd.texture_map[tex_idx]->GetWidth();
-    int height = gd.texture_map[tex_idx]->GetHeight();
+glm::vec2 Renderer::get_texture_size_impl(const std::string& key) {
+    int width = gd.texture_map[key].tex->GetWidth();
+    int height = gd.texture_map[key].tex->GetHeight();
     return glm::vec2(width, height);
 }
 
@@ -72,12 +72,12 @@ void Renderer::init_impl() {
     gd.ib = new IndexBuffer(indices, MAX_IDX_COUNT);
 }
 
-void Renderer::load_texture_impl(const std::string &path) {
-    gd.texture_map[gd.texture_indexes] = new Texture(path);
-    gd.texture_indexes++;
+void Renderer::load_texture_impl(const std::string &key, const std::string &path) {
+    gd.texture_map[key] = (TexIdx){ .idx = gd.texture_indexes, .tex = new Texture(path) };
+    gd.texture_map[key].tex->Bind(gd.texture_indexes++);
 
-    for (uint32_t i = 0; i < gd.texture_indexes; ++i) {
-        gd.texture_map[i]->Bind(i);
+    for (auto i : gd.texture_map) {
+	i.second.tex->Bind(i.second.idx);
     }
 }
 
@@ -102,8 +102,8 @@ Renderer::~Renderer() {
     delete gd.ib;
     delete[] gd.quad_buffer;
 
-    for (uint32_t i = 0; i < gd.texture_map.size(); ++i) {
-        delete gd.texture_map[i];
+    for (auto i = gd.texture_map.begin(); i != gd.texture_map.end(); i++) {
+        delete i->second.tex;
         gd.texture_map.erase(i);
     }
 
@@ -146,7 +146,7 @@ void Renderer::append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord,
 }
 
 // texture uv
-void Renderer::draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint32_t tex_idx) {
+void Renderer::draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, const std::string& key) {
     
     if (gd.index_count >= MAX_IDX_COUNT) {
         Renderer::end_batch_impl();
@@ -154,7 +154,7 @@ void Renderer::draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint3
         Renderer::begin_batch_impl();
     }
     
-    tex_idx = (float) tex_idx;
+    float tex_idx = (float) gd.texture_map[key].idx;
 
     glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
     glm::vec2 top_left = { uv.x, uv.y  };

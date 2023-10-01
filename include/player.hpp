@@ -5,13 +5,16 @@
 #include "animation.hpp"
 #include "spritesheet.hpp"
 #include "item.hpp"
+#include "statusbar.hpp"
 #include "window.hpp"
+
 
 class Player : public Entity {
 private:
     Animation *animation = nullptr;
     SpriteSheet *sprite_sheet = nullptr;
     Item *weapon = nullptr;
+    StatusBar *lifebar = nullptr;
 
     glm::mat4 model = glm::mat4(1.f); // Mmodel . Vlocal
     float looking_at = 0.f;
@@ -26,7 +29,7 @@ private:
 public:
     Player(
            glm::vec2 pos, glm::vec2 vel, glm::vec2 scale,
-           uint32_t texture_idx,
+           const std::string &texture_key,
            uint32_t cell_width, uint32_t cell_height,
            uint32_t rows, uint32_t cols);
 
@@ -37,6 +40,7 @@ public:
             delete sprite_sheet;
         if (weapon)
             delete weapon;
+
     }
 
     glm::mat4 camera = glm::mat4(1.f);

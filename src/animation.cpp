@@ -23,7 +23,7 @@ void Animation::update(const SpriteSheet &sheet, float dt)
 }
 
 glm::vec4 Animation::get_uv(const SpriteSheet &sheet, bool flip, uint32_t row) {
-    glm::vec4 uv = this->calculate_sprite_position(sheet, row, this->count_cols);
+    glm::vec4 uv = Animation::calculate_sprite_position(sheet, row, this->count_cols);
     if (flip) {
         float x = uv.x;
         uv.x = uv.z;
@@ -34,7 +34,7 @@ glm::vec4 Animation::get_uv(const SpriteSheet &sheet, bool flip, uint32_t row) {
 }
 
 glm::vec4 Animation::calculate_sprite_position(const SpriteSheet &sheet, uint32_t row, uint32_t col) {
-    glm::vec2 tex_size = Renderer::get_texture_size(sheet.tex_idx);
+    glm::vec2 tex_size = Renderer::get_texture_size(sheet.tex);
     float w = 1.0f / (tex_size.x / sheet.cell_width);
     float h = 1.0f / (tex_size.y / sheet.cell_height);
     float x = col * w;

@@ -39,7 +39,10 @@ Window::~Window() {
     
     glfwTerminate();
 }
- 
+
+bool Window::window_should_close() {
+    return glfwWindowShouldClose(this->window);
+}
 
 void Window::close_window() {
     glfwSetWindowShouldClose(this->window, GLFW_TRUE);

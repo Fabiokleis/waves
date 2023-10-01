@@ -10,12 +10,18 @@
 #include "vertexbufferlayout.hpp"
 #include "indexbuffer.hpp"
 
+#include <string>
 #include <unordered_map>
 
 
 class Renderer
 {
 private:
+
+    struct TexIdx {
+	uint32_t idx;
+	Texture *tex = nullptr;
+    };
     
     struct GameData {
     
@@ -30,11 +36,13 @@ private:
         uint32_t texture_indexes = 0;
         uint32_t shader_indexes = 0;
 
-        std::unordered_map<uint32_t, Texture*> texture_map;
+        std::unordered_map<std::string, TexIdx> texture_map;
         std::unordered_map<uint32_t, Shader*> shader_map;
     };
 
     GameData gd;
+
+
     
 public:
 
@@ -57,7 +65,7 @@ public:
     static void end_batch() { get()->end_batch_impl(); }
     static void flush() { get()->flush_impl(); }
 
-    static void load_texture(const std::string& path) { get()->load_texture_impl(path); }
+    static void load_texture(const std::string& key, const std::string& path) { get()->load_texture_impl(key, path); }
     
     static void load_shader(const std::string& vert_path, const std::string& frag_path) {
         get()->load_shader_impl(vert_path, frag_path);
@@ -65,10 +73,10 @@ public:
     
     static Shader* get_shader(uint32_t shader_idx) { return get()->get_shader_impl(shader_idx); }
 
-    static glm::vec2 get_texture_size(uint32_t tex_idx) { return get()->get_texture_size_impl(tex_idx); }
+    static glm::vec2 get_texture_size(const std::string &key) { return get()->get_texture_size_impl(key); }
     
-    static void draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint32_t tex_idx) {
-        get()->draw_quad_impl(pos, size, uv, tex_idx);
+    static void draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, const std::string& key) {
+        get()->draw_quad_impl(pos, size, uv, key);
     }
     
     static void draw_quad(glm::vec2 pos, glm::vec2 size, glm::vec4 color) {
@@ -85,11 +93,11 @@ private:
     void begin_batch_impl();
     void end_batch_impl();
     void flush_impl();
-    void load_texture_impl(const std::string& path);
+    void load_texture_impl(const std::string& key, const std::string& path);
     void load_shader_impl(const std::string& vert_path, const std::string& frag_path);
     Shader* get_shader_impl(uint32_t shader_idx);
-    glm::vec2 get_texture_size_impl(uint32_t tex_idx);
-    void draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, uint32_t tex_idx);
+    glm::vec2 get_texture_size_impl(const std::string& key);
+    void draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 uv, const std::string& key);
     void draw_quad_impl(glm::vec2 pos, glm::vec2 size, glm::vec4 color);
 
     void append_vertex(glm::vec2 pos, glm::vec2 size, glm::vec2 tex_coord, glm::vec4 color, float tex_idx);

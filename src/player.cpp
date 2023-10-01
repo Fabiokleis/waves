@@ -9,13 +9,18 @@
 
 Player::Player(
            glm::vec2 pos, glm::vec2 vel, glm::vec2 scale,
-           uint32_t texture_idx,
+           const std::string& texture_key,
            uint32_t cell_width, uint32_t cell_height,
            uint32_t rows, uint32_t cols) :
     Entity(pos, glm::vec2(cell_width, cell_height), vel, scale) 
 {
-    this->animation = new Animation(PLAYER_ANIMATION_TIME);
-    this->sprite_sheet = new SpriteSheet(texture_idx, rows, cols, cell_width, cell_height);
+    animation = new Animation(PLAYER_ANIMATION_TIME);
+    sprite_sheet = new SpriteSheet(texture_key, rows, cols, cell_width, cell_height);
+    lifebar = new StatusBar(
+                            this,
+                            glm::vec2(PLAYER_LIFEBAR_WIDTH, PLAYER_LIFEBAR_HEIGHT),
+                            glm::vec4(0.0, 1.f, 0.f, 1.f),
+                            glm::vec4(1.f, 0.f, 0.f, 1.f));
 }
 
 void Player::draw() {    
@@ -37,23 +42,32 @@ void Player::draw() {
     Renderer::draw_quad(
                         pos, // local position
                         this->body.size, uv,
-                        this->sprite_sheet->tex_idx);
+                        this->sprite_sheet->tex);
 
     Renderer::end_batch(); // copy cpu buffer to gpu
     Renderer::flush(); // draw triangles
 
 
-    // weapon draw
+    // life bar and weapon draw
     Renderer::begin_batch();
     Renderer::get_shader(0)->Bind();
     Renderer::get_shader(0)->SetUniform4f("u_color", 1.f, 1.f, 1.f, 1.f);
     Renderer::get_shader(0)->SetUniformMat4f("u_model", weapon->get_model());
     Renderer::get_shader(0)->SetUniformMat4f("u_camera", this->camera);
     weapon->draw();
-
+ 
     Renderer::end_batch();
     Renderer::flush();
 
+    Renderer::begin_batch();
+    Renderer::get_shader(0)->Bind();
+    Renderer::get_shader(0)->SetUniform4f("u_color", 1.f, 1.f, 1.f, 1.f);
+    Renderer::get_shader(0)->SetUniformMat4f("u_model", glm::mat4(1.f));
+    Renderer::get_shader(0)->SetUniformMat4f("u_camera", this->camera);
+
+    lifebar->draw();
+    Renderer::end_batch();
+    Renderer::flush();
 }
 
 void Player::apply_player_model(float scaler, glm::vec3 axis, float rotation) {
@@ -70,8 +84,9 @@ void Player::apply_player_model(float scaler, glm::vec3 axis, float rotation) {
     this->model = translation * rot * scal; // player model matrix
 
 
-    glm::mat4 w_rot = glm::rotate(glm::mat4(1.0f), glm::radians(looking_at - 45), axis);
-    glm::mat4 w_trans = glm::translate(glm::mat4(1.0f), glm::vec3(5.f, -15.f, 0.f) + pos);
+    // weapon model
+    glm::mat4 w_rot = glm::rotate(glm::mat4(1.0f), glm::radians(looking_at - 45.f), axis);
+    glm::mat4 w_trans = glm::translate(glm::mat4(1.0f), glm::vec3(5.f, -20.f, 0.f) + pos); // align with player position
     glm::mat4 w_scal = glm::scale(glm::mat4(1.f), glm::vec3(weapon->get_scale().x, weapon->get_scale().y, 1.f));
     glm::mat4 w_model = w_trans * w_rot * w_scal;
     weapon->set_model(w_model);
@@ -137,5 +152,12 @@ void Player::update(const Window &window, float delta_time) {
     this->look_at_front_of_mouse(window.get_mouse_pos(), window.get_size());
     this->animation->update(*this->sprite_sheet, delta_time);
 
+
+    // begin life bar at bottom left bound of player
+    lifebar->set_position(glm::vec2(
+                                    body.position.x - (PLAYER_LIFEBAR_WIDTH/2 + body.size.x/2),
+                                    body.position.y - (PLAYER_LIFEBAR_HEIGHT + (body.size.y * body.scale.y) + 10)));
+    
     weapon->update(window, delta_time);
+    //lifebar->update(window, delta_time);
 }

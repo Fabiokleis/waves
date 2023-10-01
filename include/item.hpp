@@ -17,7 +17,7 @@ public:
          glm::vec2 pos,
          glm::vec2 vel,
          glm::vec2 scale,
-         uint32_t texture_idx,
+         const std::string& texture_key,
          uint32_t cell_width,
          uint32_t cell_height,
          uint32_t rows,
