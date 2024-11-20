@@ -3,12 +3,16 @@
 #include <stb_image.h>
 #include <string>
 #include "window.hpp"
+#include <string.h>
+#include <errno.h>
 
 Window::Window(const std::string &title, uint32_t width, uint32_t height) {
     std::cout << "Initializing glfw!\n";
 
+    
     if (!glfwInit()) {
         std::cout << "Could not initialize glfw!\n";
+	std::cout << "error: " << strerror(errno);
         exit(1);
     }
 
@@ -18,10 +22,12 @@ Window::Window(const std::string &title, uint32_t width, uint32_t height) {
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
     std::cout << "Creating window!\n";
     /* Create a windowed mode window and its OpenGL context */
     this->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+
     if (!this->window)
     {
         glfwTerminate();

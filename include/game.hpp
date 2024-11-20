@@ -35,6 +35,7 @@ namespace Waves {
         Player *player = nullptr;
 	Map *tile_map = nullptr;
 
+	
         glm::vec3 translation;
         glm::mat4 proj;
         glm::mat4 view;

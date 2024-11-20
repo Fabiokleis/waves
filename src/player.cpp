@@ -96,6 +96,7 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
     float y = window_size.y - mouse_pos.y;
     glm::vec2 mapped_mouse = glm::vec2(mouse_pos.x, y);
 
+    std::cout << "x: " << mapped_mouse.x << " y: " << mapped_mouse.y << "\n";
     float scaler = body.scale.x;
     
     float ca = mapped_mouse.x - (this->body.position.x  - (this->body.size.x/2 * scaler));
@@ -119,6 +120,8 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
 void Player::move(glm::vec2 dir, float delta_time) {
     glm::vec2 vel = this->body.velocity * dir;
     this->body.position += vel * delta_time;
+
+    camera_offset = glm::vec3(body.position.x, body.position.y, 0.f);
 }
 
 bool Player::throw_projectile(const Window& window) {
