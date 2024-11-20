@@ -77,9 +77,21 @@ void Game::update() {
         glm::vec2 scale = player->get_scale();
         glm::vec2 p_pos = player->get_position();
         glm::vec2 p_size = player->get_size();
+	glm::vec2 w_size = player->get_weapon_size();
+	
         glm::vec2 pos = glm::vec2(
                                   p_pos.x - (p_size.x/2) - (p_size.x/2 * scale.x),
                                   p_pos.y - (p_size.y/2) - (p_size.y/2 * scale.y));
+
+	// std::cout << "angle: " << angle << "\n";
+
+	// if (angle < 1.0f) {
+	//     pos += glm::vec2(w_size.x / 2, w_size.y / 2 * angle);
+	// } else if (angle > 1.0f && angle < 2.0f) {
+	//     pos += glm::vec2(-w_size.x / 2 * , w_size.y / 2);
+	// } else if (angle > 1.f && angle < 1.5f) {
+	// } else {
+	// }
                                   
         glm::vec2 vel = glm::vec2(
                                   PROJECTILE_VELOCITY * glm::cos(angle),
@@ -131,8 +143,10 @@ void Game::update() {
             glm::vec2 pos0 = player->get_position() - size0;
             glm::vec2 pos1 = enemie->get_position();
         
-            if (collision_detect(pos0, size0, pos1, size1))
+            if (collision_detect(pos0, size0, pos1, size1)) {
                 std::cout << "collide player x enemie\n";
+		player->have_damage(enemie->damage);
+	    }
         }
     }
 
@@ -145,7 +159,7 @@ void Game::update() {
 
 void Game::sync_player_camera() {
 
-    std::cout << "x: " << player->get_position().x << " y: " << player->get_position().y << "\n";
+  //std::cout << "x: " << player->get_position().x << " y: " << player->get_position().y << "\n";
 
     proj = glm::ortho(
 		      0.f,//player->camera_offset.x,

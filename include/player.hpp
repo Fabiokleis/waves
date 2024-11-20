@@ -20,6 +20,8 @@ private:
     float looking_at = 0.f;
     float shoot_timer = 0.f;
     bool flip = false;
+    float life = 0.f;
+    bool ded = false;
     
     void move(glm::vec2 dir, float delta_time);
     void look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size);
@@ -47,6 +49,8 @@ public:
     glm::vec3 camera_offset = glm::vec3(0.f);
 
     float get_rotation() const { return looking_at; }
+    glm::vec2 get_weapon_size() const { return weapon->get_size(); };
+    void have_damage(float dmg);
 
     bool throw_projectile(const Window& window);
     void set_weapon(Item *n_weapon) {

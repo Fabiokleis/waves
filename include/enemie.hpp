@@ -12,6 +12,9 @@ private:
     Entity *target = nullptr;
 
 public:
+    float damage = 5.f;
+
+public:
     Enemie(
            glm::vec2 pos, glm::vec2 vel, glm::vec2 scale,
            const std::string& texture_key,
