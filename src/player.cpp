@@ -21,6 +21,7 @@ Player::Player(
                             glm::vec2(PLAYER_LIFEBAR_WIDTH, PLAYER_LIFEBAR_HEIGHT),
                             glm::vec4(0.0, 1.f, 0.f, 1.f),
                             glm::vec4(1.f, 0.f, 0.f, 1.f));
+    life = PLAYER_LIFE_POINTS;
 }
 
 void Player::draw() {    
@@ -96,6 +97,7 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
     float y = window_size.y - mouse_pos.y;
     glm::vec2 mapped_mouse = glm::vec2(mouse_pos.x, y);
 
+    //std::cout << "x: " << mapped_mouse.x << " y: " << mapped_mouse.y << "\n";
     float scaler = body.scale.x;
     
     float ca = mapped_mouse.x - (this->body.position.x  - (this->body.size.x/2 * scaler));
@@ -119,6 +121,24 @@ void Player::look_at_front_of_mouse(glm::vec2 mouse_pos, glm::vec2 window_size) 
 void Player::move(glm::vec2 dir, float delta_time) {
     glm::vec2 vel = this->body.velocity * dir;
     this->body.position += vel * delta_time;
+
+    camera_offset = glm::vec3(body.position.x, body.position.y, 0.f);
+}
+
+void Player::have_damage(float dmg) {
+    // this->lifebar->set_color(
+    //     glm::vec4(0.0, 1.f, 0.f, 1.f),
+    // 	glm::vec4(1.f, 0.f, 0.f, 1.f)
+    // );
+  
+    this->life -= dmg;
+    if (this->life < 0.f) this->life = 0.f;
+
+    if (!ded) {
+        this->lifebar->decrease_width(PLAYER_LIFEBAR_WIDTH * this->life / PLAYER_LIFE_POINTS);
+    }
+    this->ded = life <= 0.f;
+    std::cout << "life: " << this->life << "\n";
 }
 
 bool Player::throw_projectile(const Window& window) {

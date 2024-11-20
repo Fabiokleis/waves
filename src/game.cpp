@@ -66,22 +66,32 @@ void Game::run() {
     }
 }
 
-void Game::sync_player_camera() {
-    view = glm::translate(glm::mat4(1.f), player->camera_offset);
-    player->camera = proj * view;
-}
 
 void Game::update() {
+    
     quit = window->is_key_pressed(GLFW_KEY_ESCAPE) || window->window_should_close();
     player->update(*window, (float)delta_time);
+    
     if (player->throw_projectile(*window)) {
         float angle = glm::radians(player->get_rotation());
         glm::vec2 scale = player->get_scale();
         glm::vec2 p_pos = player->get_position();
         glm::vec2 p_size = player->get_size();
+	glm::vec2 w_size = player->get_weapon_size();
+	
         glm::vec2 pos = glm::vec2(
                                   p_pos.x - (p_size.x/2) - (p_size.x/2 * scale.x),
                                   p_pos.y - (p_size.y/2) - (p_size.y/2 * scale.y));
+
+	// std::cout << "angle: " << angle << "\n";
+
+	// if (angle < 1.0f) {
+	//     pos += glm::vec2(w_size.x / 2, w_size.y / 2 * angle);
+	// } else if (angle > 1.0f && angle < 2.0f) {
+	//     pos += glm::vec2(-w_size.x / 2 * , w_size.y / 2);
+	// } else if (angle > 1.f && angle < 1.5f) {
+	// } else {
+	// }
                                   
         glm::vec2 vel = glm::vec2(
                                   PROJECTILE_VELOCITY * glm::cos(angle),
@@ -114,7 +124,7 @@ void Game::update() {
             if (collision_detect(pos0, size0, pos1, size1)) {
                 projectile->ded = true;
                 enemie->ded = true;
-                std::cout << "kill enemie" << "\n";
+                std::cout << "kill enemie\n";
             }
 
             if (projectile->ded)
@@ -133,8 +143,10 @@ void Game::update() {
             glm::vec2 pos0 = player->get_position() - size0;
             glm::vec2 pos1 = enemie->get_position();
         
-            if (collision_detect(pos0, size0, pos1, size1))
-                std::cout << "collide player x enemie" << "\n";
+            if (collision_detect(pos0, size0, pos1, size1)) {
+                std::cout << "collide player x enemie\n";
+		player->have_damage(enemie->damage);
+	    }
         }
     }
 
@@ -142,16 +154,26 @@ void Game::update() {
         projectile->update(*window, delta_time);   
     }
 
-
-
     sync_player_camera();
+}
+
+void Game::sync_player_camera() {
+
+  //std::cout << "x: " << player->get_position().x << " y: " << player->get_position().y << "\n";
+
+    proj = glm::ortho(
+		      0.f,//player->camera_offset.x,
+		      (float)WIDTH,
+		      0.f,//player->camera_offset.y,
+		      (float)HEIGHT, -1.0f, 1.0f);
+
+    view = glm::translate(glm::mat4(1.f), glm::vec3(0.f));
+    player->camera = proj * view;
 }
 
 void Game::draw() {
 
     Renderer::clear(glm::vec4(0.0, 0.0f, 0.0, 1.0));
-
-    
     // map
     Renderer::begin_batch();                                                              
     {
@@ -164,18 +186,79 @@ void Game::draw() {
         Renderer::get_shader(0)->SetUniform1f("u_time", total_time);                           
 	tile_map->draw();	
 
-        for (auto enemie : enemies) {
-            enemie->draw();
-        }
-        for (auto proj : projectiles) {
-            proj->draw();
+	for (auto proj : projectiles) {
+	    proj->draw();
         }
 
+	for (auto enemie : enemies) {
+            enemie->draw();
+        }
     }
     Renderer::end_batch();                                                                
     Renderer::flush();        
     
     player->draw();
+}
+
+void Game::init() {
+    window = new Window("Waves", WIDTH, HEIGHT);
+    //window->set_custom_cursor_image("res/textures/mouse_icon.png");
+    Renderer::init();
+
+    load_textures();
+    load_shaders();
+
+    
+    // load map from tiled editor project file
+    tile_map = new Map("res/maps/map.tmj");
+    
+    // creating player with bat sprite sheet
+    player = new Player(glm::vec2(WIDTH/2, HEIGHT/2), // world position
+                        glm::vec2(200.f, 200.f), glm::vec2(1.f, 1.f),
+                              "player", 32, 64, 8, 4); // tex_key, tile width, tile height, rows, cols
+
+    // creating a weapon to player
+    player->set_weapon(new Item(
+				glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f),
+				glm::vec2(1.f, 1.f), "weapon0", 64, 64, 1, 3));
+    
+    // view proj matrix
+    translation = glm::vec3(WIDTH/2, HEIGHT/2, 0.f);
+    proj = glm::ortho(0.0f, (float)WIDTH, 0.f, (float)HEIGHT, -1.0f, 1.0f);
+    view = glm::translate(glm::mat4(1.0f), translation);
+
+    player->camera_offset = translation;
+    player->camera = proj * view;
+
+    srand(time(0));
+    for (uint32_t i = 0; i < 1; ++i) {
+        glm::vec2 pos = glm::vec2(rand() % WIDTH, rand() % HEIGHT);                                  
+        glm::vec2 vel = glm::vec2(ENEMIE_VELOCITY, ENEMIE_VELOCITY);
+        
+        uint32_t cell_width = 32;
+        uint32_t cell_height = 32;
+        uint32_t rows = 4;
+        uint32_t cols = 4;
+        enemies.push_back(new Enemie(
+				     pos, vel,
+				     glm::vec2(1.f, 1.f),
+				     "enemie0",
+				     cell_width, cell_height,
+				     rows, cols));
+        enemies[i]->set_target((Entity*)player);
+    }
+}
+
+void Game::load_textures() {
+    Renderer::load_texture("white", "");
+    Renderer::load_texture("player", "res/textures/player.png");
+    Renderer::load_texture("enemie0", "res/textures/32x32-bat-sprite.png");
+    Renderer::load_texture("projectile0", "res/textures/clay2.png");
+    Renderer::load_texture("weapon0", "res/textures/staff2.png");
+}
+
+void Game::load_shaders() {
+    Renderer::load_shader("res/shaders/shader.vert", "res/shaders/shader.frag");
 }
 
 float Game::norma(glm::vec2 v0) {
@@ -216,65 +299,4 @@ float Game::sat_collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1
 bool Game::collision_detect(glm::vec2 pos0, glm::vec2 size0, glm::vec2 pos1, glm::vec2 size1) {
     return sat_collision_detect(pos0, size0, pos1, size1) <= 0 &&
         sat_collision_detect(pos1, size1, pos0, size0) <= 0;
-}
-
-
-void Game::init() {
-    window = new Window("Waves", WIDTH, HEIGHT);
-    window->set_custom_cursor_image("res/textures/mouse_icon.png");
-    Renderer::init();
-
-    load_textures();
-    load_shaders();
-
-    // load map from tiled editor project file
-    tile_map = new Map("res/maps/map.tmj");
-    
-    // creating player with bat sprite sheet
-    player = new Player(glm::vec2(WIDTH/2, HEIGHT/2), // world position
-                        glm::vec2(200.f, 200.f), glm::vec2(1.f, 1.f),
-                              "player", 32, 64, 8, 4); // tex_key, tile width, tile height, rows, cols
-
-    // creating a weapon to player
-    player->set_weapon(new Item(
-				glm::vec2(0.f, 0.f), glm::vec2(0.f, 0.f),
-				glm::vec2(1.f, 1.f), "weapon0", 64, 64, 1, 3));
-    
-    // view proj matrix
-    translation = glm::vec3(0.f);
-    proj = glm::ortho(0.0f, (float)WIDTH, 0.f, (float)HEIGHT, -1.0f, 1.0f);
-    view = glm::translate(glm::mat4(1.0f), translation);
-
-    player->camera_offset = translation;
-    player->camera = proj * view;
-
-    srand(time(0));
-    for (uint32_t i = 0; i < 1; ++i) {
-        glm::vec2 pos = glm::vec2(rand() % WIDTH, rand() % HEIGHT);                                  
-        glm::vec2 vel = glm::vec2(ENEMIE_VELOCITY, ENEMIE_VELOCITY);
-        
-        uint32_t cell_width = 32;
-        uint32_t cell_height = 32;
-        uint32_t rows = 4;
-        uint32_t cols = 4;
-        enemies.push_back(new Enemie(
-				     pos, vel,
-				     glm::vec2(1.f, 1.f),
-				     "enemie0",
-				     cell_width, cell_height,
-				     rows, cols));
-        enemies[i]->set_target((Entity*)player);
-    }
-}
-
-void Game::load_textures() {
-    Renderer::load_texture("white", "");
-    Renderer::load_texture("player", "res/textures/player.png");
-    Renderer::load_texture("enemie0", "res/textures/32x32-bat-sprite.png");
-    Renderer::load_texture("projectile0", "res/textures/clay2.png");
-    Renderer::load_texture("weapon0", "res/textures/staff2.png");
-}
-
-void Game::load_shaders() {
-    Renderer::load_shader("res/shaders/shader.vert", "res/shaders/shader.frag");
 }

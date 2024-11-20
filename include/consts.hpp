@@ -26,5 +26,6 @@
 #define ENEMIE_ANIMATION_TIME 0.1
 #define ENEMIE_VELOCITY 100
 #define ITEM_ANIMATION_TIME 0.1
+#define PLAYER_LIFE_POINTS 1000
 
 #endif // __CONSTS_H__: header

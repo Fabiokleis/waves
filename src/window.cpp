@@ -3,12 +3,16 @@
 #include <stb_image.h>
 #include <string>
 #include "window.hpp"
+#include <string.h>
+#include <errno.h>
 
 Window::Window(const std::string &title, uint32_t width, uint32_t height) {
     std::cout << "Initializing glfw!\n";
 
+    
     if (!glfwInit()) {
         std::cout << "Could not initialize glfw!\n";
+	std::cout << "error: " << strerror(errno);
         exit(1);
     }
 
@@ -18,10 +22,12 @@ Window::Window(const std::string &title, uint32_t width, uint32_t height) {
 
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
     std::cout << "Creating window!\n";
     /* Create a windowed mode window and its OpenGL context */
     this->window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+
     if (!this->window)
     {
         glfwTerminate();
@@ -30,7 +36,7 @@ Window::Window(const std::string &title, uint32_t width, uint32_t height) {
     }
     /* Make the window's context current */
     glfwMakeContextCurrent(this->window);
-    glfwSwapInterval(1);
+    //glfwSwapInterval(1);
 }
 
 Window::~Window() {
@@ -71,6 +77,7 @@ void Window::set_custom_cursor_image(const std::string &icon_path) {
     
     this->cursor.glfw_cursor = glfwCreateCursor(&image, 0, 0);
     if (NULL == this->cursor.glfw_cursor) {
+        std::cout << "error: " << strerror(errno);
         std::cerr << "Could not create a cursor." << std::endl;
         exit(1);
     }
@@ -78,7 +85,7 @@ void Window::set_custom_cursor_image(const std::string &icon_path) {
         stbi_image_free(this->cursor.image_buffer);
     }
 
-    glfwSetCursor(window, this->cursor.glfw_cursor);
+    glfwSetCursor(this->window, this->cursor.glfw_cursor);
 }
 
 bool Window::is_key_pressed(int keycode) const {
