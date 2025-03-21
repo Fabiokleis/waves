@@ -14,12 +14,13 @@ void main()
 {
     int idx = int(v_tex_idx);
 
+    // idx = 0 = no texture or white tex
     if (idx != 0) {
         vec4 tex_color = texture(u_textures[idx], v_tex_coord);
 
         color = tex_color;
 
-    } else 
+    } else {
         color = v_color + (sin(u_time) * cos(u_time));
-
+    }
 }

@@ -36,7 +36,7 @@ int Shader::GetUniformLocation(const std::string& name)
 
     int location = glGetUniformLocation(m_RendererID, name.c_str());
     if (location == -1)
-        std::cerr << "Cannot get uniform location" << std::endl;
+        std::cerr << "Cannot get uniform location:: " << name << std::endl;
     
     m_UniformLocationCache[name] = location;
     return location;
@@ -115,6 +115,7 @@ unsigned int Shader::CreateShader(const std::string& vertexShader, const std::st
     unsigned int program = glCreateProgram();
     unsigned int vs = CompileShader(GL_VERTEX_SHADER, vertexShader);
     unsigned int fs = CompileShader(GL_FRAGMENT_SHADER, fragmentShader);
+    std::cout << "Shaders compiled\n";
 
     glAttachShader(program, vs);
     glAttachShader(program, fs);

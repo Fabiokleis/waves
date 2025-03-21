@@ -30,6 +30,17 @@ stdenv.mkDerivation {
     libdrm
     mesa
     ninja
+    xorg.libXxf86vm
+    xorg.libxcb.dev
+    xorg.libxcb
+    xorg.xkbevd
+    xorg.xcbutil
+    xorg.xkbutils
+    xorg.xcursorthemes
+    xorg.xcursorgen
+    xwayland
+    gtk2
+    gtk3
   ];
   shellHook = ''
     export CC="clang";
@@ -37,3 +48,4 @@ stdenv.mkDerivation {
   '';
 
 }
+

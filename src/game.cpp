@@ -202,7 +202,7 @@ void Game::draw() {
 
 void Game::init() {
     window = new Window("Waves", WIDTH, HEIGHT);
-    //window->set_custom_cursor_image("res/textures/mouse_icon.png");
+    window->set_custom_cursor_image("res/textures/mouse_icon.png");
     Renderer::init();
 
     load_textures();
