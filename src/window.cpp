@@ -77,7 +77,7 @@ void Window::set_custom_cursor_image(const std::string &icon_path) {
     
     this->cursor.glfw_cursor = glfwCreateCursor(&image, 0, 0);
     if (NULL == this->cursor.glfw_cursor) {
-        std::cout << "error: " << strerror(errno);
+        std::cout << "error: " << strerror(errno) << std::endl;
         std::cerr << "Could not create a cursor." << std::endl;
         exit(1);
     }

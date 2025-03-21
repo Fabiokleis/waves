@@ -1,51 +1,49 @@
-with import <nixpkgs> {};
+{ pkgs ? import <nixpkgs> {} }:
 
-stdenv.mkDerivation {
+pkgs.stdenv.mkDerivation {
   name = "dev-environment";
   buildInputs = [
-    pkg-config
-    cmake
-    clang
-    libxkbcommon
-    libffi
-    xorg.libX11
-    xorg.libXrandr
-    xorg.libXinerama
-    xorg.libXcursor
-    xorg.libXi
-    libGL
-    libGLU
-    glfw
-    libinput
-    wayland
-    xwayland
-    xorg.xcbproto
-    xorg.xcbutil
-    libglvnd
-    libseat
-    pixman
-    wayland-protocols
-    glfw-wayland
-    binutils
-    libdrm
-    mesa
-    ninja
-    xorg.libXxf86vm
-    xorg.libxcb.dev
-    xorg.libxcb
-    xorg.xkbevd
-    xorg.xcbutil
-    xorg.xkbutils
-    xorg.xcursorthemes
-    xorg.xcursorgen
-    xwayland
-    gtk2
-    gtk3
+    pkgs.pkg-config
+    pkgs.cmake
+    pkgs.clang
+    # Graphics/Window system dependencies
+    pkgs.glfw
+    pkgs.libGL
+    pkgs.libglvnd
+    pkgs.mesa
+    # X11 dependencies
+    pkgs.xorg.libX11
+    pkgs.xorg.libXcursor
+    pkgs.xorg.libXrandr
+    pkgs.xorg.libXinerama
+    pkgs.xorg.libXi
+    pkgs.xorg.libxcb
+    pkgs.xorg.libXxf86vm
+    # Wayland dependencies
+    pkgs.wayland
+    pkgs.libxkbcommon  # Fix typo: "pkgs", not "pkgs"
+    pkgs.wayland-protocols
+    # Additional utilities
+    pkgs.libinput
+    pkgs.libseat
+    pkgs.pixman
   ];
+
+  MY_LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
+    pkgs.glfw
+    pkgs.xorg.libXcursor
+    pkgs.xorg.libX11
+  ];
+
   shellHook = ''
+    # Set compiler
     export CC="clang";
     export CXX="clang++";
+    
+    # Combine all library paths from build inputs
+    export LD_LIBRARY_PATH=$MY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+    
+    # Optional verification
+    echo "LD_LIBRARY_PATH set to: $LD_LIBRARY_PATH"
   '';
-
 }
-
